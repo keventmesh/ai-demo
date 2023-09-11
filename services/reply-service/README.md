@@ -43,7 +43,7 @@ open localhost:5000/test
 submit the form, with value deadbeef
 
 # send a CloudEvent
-curl -v "http://localhost:5000" \
+curl -v "http://localhost:5000/test" \
   -X POST \
   -H "Ce-Specversion: 1.0" \
   -H "Ce-Type: demo.prediction.event" \
