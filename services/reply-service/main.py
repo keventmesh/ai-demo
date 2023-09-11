@@ -1,8 +1,8 @@
 from threading import Lock
-from flask import Flask, render_template, session, request, \
-    copy_current_request_context
-from flask_socketio import SocketIO, emit, join_room, leave_room, \
-    close_room, rooms, disconnect
+from flask import Flask, render_template, session, request
+from flask_socketio import SocketIO, emit
+from threading import Lock
+from cloudevents.http import from_http
 
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
@@ -10,109 +10,72 @@ from flask_socketio import SocketIO, emit, join_room, leave_room, \
 async_mode = None
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, async_mode=async_mode)
-thread = None
-thread_lock = Lock()
+
+mutex = Lock()
+# TODO: entries here actually need a TTL to prevent leaks
+connections = {}  # sid -> request
+prediction_reply_requests = {}  # upload_id -> sid
 
 
-def background_thread():
-    """Example of how to send server generated events to clients."""
-    count = 0
-    while True:
-        socketio.sleep(10)
-        count += 1
-        socketio.emit('my_response',
-                      {'data': 'Server generated event', 'count': count})
-
-
-@app.route('/')
-def index():
+@app.route('/test')
+def test_ui():
     return render_template('index.html', async_mode=socketio.async_mode)
 
 
-@socketio.event
-def my_event(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
-         {'data': message['data'], 'count': session['receive_count']})
+@app.route("/", methods=["POST"])
+def receive_cloud_event():
+    event = from_http(request.headers, request.get_data())
+
+    print(
+        f"Found {event['id']} from {event['source']} with type "
+        f"{event['type']} and specversion {event['specversion']}"
+    )
+
+    data = event.data
+    upload_id = data['uploadId']
+    with mutex:
+        if upload_id in prediction_reply_requests:
+            sid = prediction_reply_requests[upload_id]
+            print("Found client waiting for reply", sid)
+            socketio.emit('reply', data, room=sid)
+            del prediction_reply_requests[upload_id]
+            return "", 204
+        else:
+            print("No client waiting for reply")
+
+    return "", 204
 
 
-@socketio.event
-def my_broadcast_event(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
-         {'data': message['data'], 'count': session['receive_count']},
-         broadcast=True)
+def register_client(request):
+    with mutex:
+        connections[request.sid] = request
 
 
-@socketio.event
-def join(message):
-    join_room(message['room'])
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
-         {'data': 'In rooms: ' + ', '.join(rooms()),
-          'count': session['receive_count']})
-
-
-@socketio.event
-def leave(message):
-    leave_room(message['room'])
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
-         {'data': 'In rooms: ' + ', '.join(rooms()),
-          'count': session['receive_count']})
-
-
-@socketio.on('close_room')
-def on_close_room(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response', {'data': 'Room ' + message['room'] + ' is closing.',
-                         'count': session['receive_count']},
-         to=message['room'])
-    close_room(message['room'])
-
-
-@socketio.event
-def my_room_event(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
-         {'data': message['data'], 'count': session['receive_count']},
-         to=message['room'])
-
-
-@socketio.event
-def disconnect_request():
-    @copy_current_request_context
-    def can_disconnect():
-        disconnect()
-
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    # for this emit we use a callback function
-    # when the callback function is invoked we know that the message has been
-    # received and it is safe to disconnect
-    emit('my_response',
-         {'data': 'Disconnected!', 'count': session['receive_count']},
-         callback=can_disconnect)
-
-
-@socketio.event
-def my_ping():
-    emit('my_pong')
+def deregister_client(request):
+    with mutex:
+        del connections[request.sid]
 
 
 @socketio.event
 def connect():
-    global thread
-    with thread_lock:
-        if thread is None:
-            thread = socketio.start_background_task(background_thread)
-    emit('my_response', {'data': 'Connected', 'count': 0})
+    print("Client connected", request.sid)
+    register_client(request)
 
 
 @socketio.on('disconnect')
-def test_disconnect():
+def disconnect():
     print('Client disconnected', request.sid)
+    deregister_client(request)
+
+
+@socketio.event
+def request_prediction_reply(message):
+    print("Received prediction reply request", message)
+    upload_id = message['uploadId']
+    print("Requested reply for Upload ID", upload_id)
+    with mutex:
+        prediction_reply_requests[upload_id] = request.sid
 
 
 if __name__ == '__main__':
