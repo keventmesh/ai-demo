@@ -30,3 +30,7 @@ TODO:
   - When CPU is set to 1, durations are ~2.5x longer
   - When TensorFlow Serving is used in a Docker container, durations are much shorter (no memory/CPU limit)
 - Use secrets for credentials in general
+
+TODO:
+- Use Gunicorn for production (containers) (https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers)
+- 
