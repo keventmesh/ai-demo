@@ -13,7 +13,8 @@ pip install -r requirements.txt
 
 Run:
 ```shell
-flask --app main --debug run
+PORT=8082 \
+python app.py
 ```
 
 # Running with Docker
@@ -31,19 +32,22 @@ docker build . -t ${DOCKER_REPO_OVERRIDE}/reply-service
 
 Run the image:
 ```shell
-docker run --rm -p 5000:5000 ${DOCKER_REPO_OVERRIDE}/reply-service
+docker run --rm \
+-p 8082:8082 \
+-e PORT="8082" \
+${DOCKER_REPO_OVERRIDE}/reply-service
 ```
 
 # Testing
 
 ```shell
 # open the test UI
-open localhost:5000/test
+open localhost:8082/test
 
 submit the form, with value deadbeef
 
 # send a CloudEvent
-curl -v "http://localhost:5000" \
+curl -v "http://localhost:8082" \
   -X POST \
   -H "Ce-Specversion: 1.0" \
   -H "Ce-Type: demo.prediction.event" \

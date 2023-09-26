@@ -1,0 +1,32 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: reply-service
+  namespace: ai-demo
+  labels:
+    app: reply-service
+spec:
+  template:
+    spec:
+      containers:
+        - image: docker.io/aliok/reply-service:latest
+          ports:
+            - containerPort: 8080
+---
+apiVersion: sources.knative.dev/v1
+kind: SinkBinding
+metadata:
+  name: reply-service
+  namespace: ai-demo
+spec:
+  subject:
+    apiVersion: serving.knative.dev/v1
+    kind: Service
+    selector:
+      matchLabels:
+        app: reply-service
+  sink:
+    ref:
+      apiVersion: eventing.knative.dev/v1
+      kind: Broker
+      name: predictions-broker
