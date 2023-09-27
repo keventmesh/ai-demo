@@ -9,7 +9,7 @@ spec:
   template:
     spec:
       containers:
-        - image: docker.io/aliok/reply-service:latest
+        - image: quay.io/kevent-mesh/reply-service:main
           ports:
             - containerPort: 8080
 ---
