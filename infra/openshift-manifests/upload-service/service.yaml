@@ -7,7 +7,7 @@ spec:
   template:
     spec:
       containers:
-        - image: quay.io/kevent-mesh/ai-demo-upload-service:latest
+        - image: quay.io/kevent-mesh/ai-demo-upload-service:main
           imagePullPolicy: Always
           env:
             - name: S3_ENDPOINT_URL
