@@ -9,7 +9,7 @@ spec:
   template:
     spec:
       containers:
-        - image: quay.io/kevent-mesh/reply-service:main
+        - image: quay.io/kevent-mesh/ai-demo-reply-service:main
           ports:
             - containerPort: 8080
 ---
