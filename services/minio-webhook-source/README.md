@@ -1,5 +1,9 @@
-# Pre-requisites
+# Minio webhook source
+
 This service gets events from Minio, converts them to CloudEvents and pushes them to the given sink.
+
+This image is published at `quay.io/kevent-mesh/ai-demo-minio-webhook-source`.
+
 
 # Running locally
 

@@ -1,5 +1,10 @@
-# Pre-requisites
+# Upload service
+
 This service uploads files to a storage over S3 protocol.
+
+This image is published at `quay.io/kevent-mesh/ai-demo-upload-service`.
+
+# Pre-requisites
 
 Setup Minio:
 ```shell

@@ -7,7 +7,7 @@ spec:
   template:
     spec:
       containers:
-        - image: docker.io/aliok/upload-service:latest
+        - image: quay.io/kevent-mesh/ai-demo-upload-service:latest
           imagePullPolicy: Always
           env:
             - name: S3_ENDPOINT_URL

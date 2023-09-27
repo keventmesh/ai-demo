@@ -9,7 +9,7 @@ spec:
   template:
     spec:
       containers:
-        - image: quay.io/pierdipi/minio-webhook-source:v1
+        - image: quay.io/kevent-mesh/ai-demo-minio-webhook-source:latest
           ports:
             - containerPort: 5000
           env:
