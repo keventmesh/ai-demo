@@ -21,8 +21,7 @@ pip install -r requirements.txt
 Run:
 ```shell
 K_SINK="https://webhook.site/48cdb072-bcf8-470e-8746-90ac76415316" \
-POD_NAME="my-pod" \
-POD_NAMESPACE="my-namespace" \
+SOURCE_DECLARATION="minio-webhook-source" \
 flask --app func --debug run
 ```
 
@@ -73,7 +72,7 @@ export DOCKER_REPO_OVERRIDE=docker.io/aliok
 
 Build the image:
 ```shell
-docker build . -t ${DOCKER_REPO_OVERRIDE}/minio-webhook-service
+docker build . -t ${DOCKER_REPO_OVERRIDE}/minio-webhook-source
 ```
 
 Run the image:
@@ -81,9 +80,8 @@ Run the image:
 docker run --rm \
 -p 5000:5000 \
 -e K_SINK="https://webhook.site/48cdb072-bcf8-470e-8746-90ac76415316" \
--e POD_NAME="my-pod" \
--e POD_NAMESPACE="my-namespace" \
-${DOCKER_REPO_OVERRIDE}/minio-webhook-service
+-e SOURCE_DECLARATION="minio-webhook-source" \
+${DOCKER_REPO_OVERRIDE}/minio-webhook-source
 ```
 
 Test:

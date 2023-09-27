@@ -11,7 +11,7 @@ SOURCE_DECLARATION = os.environ.get("SOURCE_DECLARATION")
 if not K_SINK:
     raise Exception("Missing K_SINK")
 if not SOURCE_DECLARATION:
-    raise Exception("Missing POD_NAMESPACE")
+    raise Exception("Missing SOURCE_DECLARATION")
 
 print(f"Going to send events to K_SINK: {K_SINK}")
 print(f"Going to use CloudEvent source value as '{SOURCE_DECLARATION}'")
