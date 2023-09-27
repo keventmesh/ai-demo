@@ -8,7 +8,8 @@ import uuid
 import boto3
 import botocore
 from PIL import Image
-from flask import Flask, render_template, request
+from flask import Flask, request
+from flask_cors import CORS, cross_origin
 
 MAX_IMG_SIZE_IN_BYTES = int(os.environ.get("MAX_IMG_SIZE_IN_BYTES", 1000 * 1000))
 MAX_IMG_WIDTH = int(os.environ.get("MAX_IMG_WIDTH", 640))
@@ -30,6 +31,8 @@ if not S3_BUCKET_NAME:
     raise Exception("Missing S3_BUCKET_NAME")
 
 app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 boto_config = botocore.client.Config(connect_timeout=5, retries={'max_attempts': 1})
 
@@ -61,13 +64,9 @@ signal.signal(signal.SIGINT, handler)
 signal.signal(signal.SIGTERM, handler)
 
 
-@app.get('/')
-def send_client_html():
-    return render_template('index.html', max_img_width=MAX_IMG_WIDTH, max_img_height=MAX_IMG_HEIGHT)
-
-
-@app.post("/upload")
-def hello_world():
+@app.post("/")
+@cross_origin()
+def upload_request():
     print("Received request")
 
     # set req size limit in Flask

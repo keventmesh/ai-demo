@@ -8,8 +8,6 @@ RUN pip install -r requirements.txt
 
 COPY . /opt/app
 
-EXPOSE 5000
-
 # 1MiB
 ENV MAX_IMG_SIZE_IN_BYTES=1000000
 ENV MAX_IMG_WIDTH=640
@@ -22,6 +20,8 @@ ENV PORT=8080
 ENV WORKERS=1
 ENV THREADS=8
 ENV TIMEOUT=0
+
+EXPOSE $PORT
 
 CMD exec gunicorn --bind :$PORT --workers $WORKERS --threads $THREADS --timeout $TIMEOUT app:app
 
