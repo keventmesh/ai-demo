@@ -3,6 +3,7 @@ import signal
 import sys
 
 from flask import Flask, render_template
+from flask_cors import CORS, cross_origin
 
 MAX_IMG_WIDTH = int(os.environ.get("MAX_IMG_WIDTH", 640))
 MAX_IMG_HEIGHT = int(os.environ.get("MAX_IMG_HEIGHT", 640))
@@ -15,8 +16,14 @@ if not UPLOAD_SERVICE_URL:
 if not REPLY_SERVICE_URL:
     raise Exception("Missing REPLY_SERVICE_URL")
 
-app = Flask(__name__)
+print("UPLOAD_SERVICE_URL: ", UPLOAD_SERVICE_URL)
+print("REPLY_SERVICE_URL: ", REPLY_SERVICE_URL)
+print("MAX_IMG_WIDTH: ", MAX_IMG_WIDTH)
+print("MAX_IMG_HEIGHT: ", MAX_IMG_HEIGHT)
 
+app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 def handler(signal, frame):
     print('Gracefully shutting down')
@@ -28,6 +35,7 @@ signal.signal(signal.SIGTERM, handler)
 
 
 @app.get('/')
+@cross_origin()
 def send_client_html():
     return render_template('index.html',
                            max_img_width=MAX_IMG_WIDTH,
