@@ -1,0 +1,22 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: ui-service
+  namespace: ai-demo
+spec:
+  template:
+    spec:
+      containers:
+        - image: quay.io/kevent-mesh/ai-demo-ui-service:main
+          imagePullPolicy: Always
+          env:
+            - name: UPLOAD_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: ui-service
+                  key: upload-service-url
+            - name: REPLY_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: ui-service
+                  key: reply-service-url

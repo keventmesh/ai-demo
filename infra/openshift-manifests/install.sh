@@ -11,8 +11,12 @@ do
   sleep 10
 done
 
+patch_knative_serving
+
 create_minio_endpoint_route && create_bucket
 delete_minio_endpoint_route
+
+patch_ui_service_configmap
 
 # kubectl port-forward -n minio-operator svc/minio 9445:443 # port-forward minio store
 # mc alias set ai-demo https://localhost:9445 minio minio1234 --insecure # set a minio host alias

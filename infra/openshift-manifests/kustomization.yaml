@@ -18,4 +18,6 @@ resources:
   - minio-webhook-source/ksvc.yaml
   - minio-webhook-source/broker.yaml
   - upload-service/service.yaml
+  - ui-service/configmap.yaml
+  - ui-service/service.yaml
 

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ui-service
+  namespace: ai-demo
+data:
+  upload-service-url: TO_BE_REPLACED
+  reply-service-url: TO_BE_REPLACED
