@@ -39,21 +39,21 @@
             border: 2px solid black;
         }
 
-        #homeView .background{
+        #homeView .background {
             background: linear-gradient(0deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)), url("static/bg.png");
             /*background: url("static/bg.png");*/
             height: 100%;
         }
 
-        #homeView .bottom{
+        #homeView .bottom {
             position: absolute;
-            bottom:0;
+            bottom: 0;
             width: 100%;
             text-align: center;
             background: linear-gradient(0deg, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
         }
 
-        #homeView .bottomTitle{
+        #homeView .bottomTitle {
             font-size: 1.4rem;
             font-weight: bold;
             text-align: center;
@@ -61,7 +61,7 @@
             text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
         }
 
-        .touchImg{
+        .touchImg {
             width: 4rem;
             height: auto;
         }
@@ -102,13 +102,13 @@
             filter: alpha(opacity=0);
         }
 
-        #evaluatingView{
+        #evaluatingView {
             position: absolute;
             top: 0;
             left: 0;
             height: 100%;
             width: 100%;
-            background: rgba(255,255,255,0.8);
+            background: rgba(255, 255, 255, 0.8);
             padding-top: 75%;
             text-align: center;
             font-size: 2rem;
@@ -121,25 +121,26 @@
             margin-left: calc(50% - 30px);
             margin-bottom: 20%;
 
-            --d:150px;
+            --d: 150px;
             width: 60px;
             height: 60px;
             border-radius: 100%;
             color: darkred;
-            box-shadow:
-                    calc(1*var(--d))      calc(0*var(--d))     0 0,
-                    calc(0.707*var(--d))  calc(0.707*var(--d)) 0 2px,
-                    calc(0*var(--d))      calc(1*var(--d))     0 4px,
-                    calc(-0.707*var(--d)) calc(0.707*var(--d)) 0 6px,
-                    calc(-1*var(--d))     calc(0*var(--d))     0 8px,
-                    calc(-0.707*var(--d)) calc(-0.707*var(--d))0 10px,
-                    calc(0*var(--d))      calc(-1*var(--d))    0 12px;
+            box-shadow: calc(1 * var(--d)) calc(0 * var(--d)) 0 0,
+            calc(0.707 * var(--d)) calc(0.707 * var(--d)) 0 2px,
+            calc(0 * var(--d)) calc(1 * var(--d)) 0 4px,
+            calc(-0.707 * var(--d)) calc(0.707 * var(--d)) 0 6px,
+            calc(-1 * var(--d)) calc(0 * var(--d)) 0 8px,
+            calc(-0.707 * var(--d)) calc(-0.707 * var(--d)) 0 10px,
+            calc(0 * var(--d)) calc(-1 * var(--d)) 0 12px;
             animation: s7 1s infinite steps(8);
             scale: 0.3;
         }
 
         @keyframes s7 {
-            100% {transform: rotate(1turn)}
+            100% {
+                transform: rotate(1turn)
+            }
         }
 
         #success {
@@ -211,7 +212,7 @@
         <div class="bottom">
             <div class="buttons">
                 <div class="imageSelectButton" class="btn btn-outline-light btn-lg">
-                    <img class="touchImg" src="static/touch_button.svg" />
+                    <img class="touchImg" src="static/touch_button.svg"/>
                     <input type="file" id="imageSelectInput" name="image" accept="image/*">
                 </div>
             </div>
@@ -278,6 +279,9 @@
         // these are passed in from the server
         const MAX_IMAGE_WIDTH = parseInt("{{ max_img_width }}", 10);
         const MAX_IMAGE_HEIGHT = parseInt("{{ max_img_height }}", 10);
+        const UPLOAD_SERVICE_URL = "{{ upload_service_url }}";
+        // TODO: not used yet
+        // const UPLOAD_SERVICE_URL = "{{ reply_service_url }}";
 
         const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
 
@@ -364,7 +368,7 @@
 
             function callUpload() {
                 $.ajax({
-                    url: "/upload",
+                    url: UPLOAD_SERVICE_URL,
                     type: "POST",
                     data: JSON.stringify({
                         // something like /9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYG
