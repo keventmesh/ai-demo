@@ -56,13 +56,17 @@ function patch_knative_serving(){
 function patch_ui_service_configmap(){
     # wait until services are ready
     oc wait --for=condition=Ready ksvc -n ai-demo upload-service
-    # oc wait --for=condition=Ready ksvc -n ai-demo reply-service
+    oc wait --for=condition=Ready ksvc -n ai-demo reply-service
 
     uploadServiceUrl=$(oc get ksvc -n ai-demo upload-service -o jsonpath="{.status.url}")
     echo "uploadServiceUrl: ${uploadServiceUrl}"
 
-    # patch the ui service configmap with the upload service url
+    replyServiceUrl=$(oc get ksvc -n ai-demo reply-service -o jsonpath="{.status.url}")
+    echo "uploadServiceUrl: ${replyServiceUrl}"
+
+    # patch the ui service configmap with the service urls
     oc patch configmap -n ai-demo ui-service --patch "{\"data\": {\"upload-service-url\": \"${uploadServiceUrl}\"}}"
+    oc patch configmap -n ai-demo ui-service --patch "{\"data\": {\"reply-service-url\": \"${replyServiceUrl}\"}}"
 
     # touch the ksvc so that it is redeployed with the new configmap
     oc patch ksvc -n ai-demo ui-service --type=json -p='[{"op": "replace", "path": "/spec/template/metadata/annotations", "value": {"dummy": '"\"$(date '+%Y%m%d%H%M%S')\""'}}]'
