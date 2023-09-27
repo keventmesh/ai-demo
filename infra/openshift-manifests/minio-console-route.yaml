@@ -1,0 +1,15 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: minio-console
+  namespace: minio-operator
+spec:
+  to:
+    kind: Service
+    name: minio-tenant-console
+    weight: 100
+  port:
+    targetPort: https-console
+  tls:
+    termination: passthrough
+  wildcardPolicy: None

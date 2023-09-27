@@ -12,6 +12,7 @@ resources:
   - minio-operator-subscription.yaml
   - minio-storage-configuration.yaml
   - minio-tenant.yaml
+  - minio-console-route.yaml
   - ai-demo-namespace.yaml
   - minio-webhook-source/event-display-service.yaml
   - minio-webhook-source/ksvc.yaml
