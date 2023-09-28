@@ -27,7 +27,7 @@ signal.signal(signal.SIGTERM, handler)
 async_mode = None
 
 app = Flask(__name__)
-socketio = SocketIO(app, async_mode=async_mode)
+socketio = SocketIO(app, async_mode=async_mode, cors_allowed_origins="*")
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
