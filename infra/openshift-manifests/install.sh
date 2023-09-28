@@ -40,3 +40,13 @@ install_postgresql
 # mc cp --recursive infra/openshift-manifests/ ai-demo/ai-demo --insecure
 
  # mc rm --recursive ai-demo/ai-demo  --dangerous --force --insecure # VERY DANGEROUS: remove every file in bucket
+
+### Testing webhook
+# source ./lib.sh
+# create_minio_endpoint_route && create_minio_client_config
+#
+# docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    admin config get ai-demo/ notify_webhook
+# docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    admin config get ai-demo/ai-demo notify_webhook
+# docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    cp --recursive /mc-config ai-demo/ai-demo
+#
+# delete_minio_endpoint_route

@@ -86,7 +86,7 @@ def receive_event():
     #   ]
     # }
 
-    print(f"Received request: {request.json}")
+    print(f"Received request {request.get_data()}")
 
     body = request.json
 
@@ -121,6 +121,7 @@ def receive_event():
     headers, body = to_binary(event)
 
     try:
+        print(f"Sending event to {K_SINK}", event['id'])
         requests.post(K_SINK, data=body, headers=headers)
     except Exception as e:
         print(f"Failed to send event to {K_SINK}")

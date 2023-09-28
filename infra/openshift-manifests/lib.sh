@@ -54,13 +54,13 @@ function add_minio_webhook(){
     endpoint=$(oc get ksvc -n ai-demo minio-webhook-source -ojsonpath="{.status.address.url}")
 
     # set the webhook endpoint, which is our minio webhook source service
-    docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    admin config set ai-demo/ notify_webhook:PRIMARY endpoint="${endpoint}:80"
+    docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    admin config set ai-demo/ notify_webhook:minio-webhook-source endpoint="${endpoint}:80"
 
     # restart the minio service
     docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    admin service restart ai-demo/
 
     # Subscribe to PUT events
-    docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    event add ai-demo/ai-demo arn:minio:sqs::PRIMARY:webhook --event put --ignore-existing
+    docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    event add ai-demo/ai-demo arn:minio:sqs::minio-webhook-source:webhook --event put --ignore-existing
 }
 
 function patch_knative_serving(){
