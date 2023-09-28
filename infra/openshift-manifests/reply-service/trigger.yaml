@@ -1,0 +1,33 @@
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: reply-service-trigger
+  namespace: ai-demo
+spec:
+  broker: predictions-broker
+  filter:
+    attributes:
+      type: com.knative.dev.prediction.event
+  subscriber:
+    ref:
+      apiVersion: v1
+      kind: Pod
+      name: reply-service-1
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: reply-service-trigger
+  namespace: ai-demo
+spec:
+  broker: predictions-broker
+  filter:
+    attributes:
+      type: com.knative.dev.prediction.event
+  subscriber:
+    ref:
+      apiVersion: v1
+      kind: Pod
+      name: reply-service-2
+
+
