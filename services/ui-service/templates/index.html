@@ -10,6 +10,9 @@
             crossorigin="anonymous"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js"
+            integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ=="
+            crossorigin="anonymous"></script>
 
     <style>
         html, body, #container, #homeView, #resultView, #evaluatingView {
@@ -280,8 +283,12 @@
         const MAX_IMAGE_WIDTH = parseInt("{{ max_img_width }}", 10);
         const MAX_IMAGE_HEIGHT = parseInt("{{ max_img_height }}", 10);
         const UPLOAD_SERVICE_URL = "{{ upload_service_url }}";
-        // TODO: not used yet
-        // const REPLY_SERVICE_URL = "{{ reply_service_url }}";
+        const REPLY_SERVICE_URL = "{{ reply_service_url }}";
+
+        console.log("MAX_IMAGE_WIDTH:", MAX_IMAGE_WIDTH);
+        console.log("MAX_IMAGE_HEIGHT:", MAX_IMAGE_HEIGHT);
+        console.log("UPLOAD_SERVICE_URL:", UPLOAD_SERVICE_URL);
+        console.log("REPLY_SERVICE_URL:", REPLY_SERVICE_URL);
 
         const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
 
@@ -339,32 +346,64 @@
             return canvas.toDataURL();
         }
 
+        function drawImage(image) {
+            const canvas = document.getElementById('canvas');
+            let $canvas = $("#canvas");
+
+            // Set canvas size to its visual size to avoid scaling
+            canvas.width = $canvas.width();
+            canvas.height = $canvas.height();
+
+            const ctx = canvas.getContext('2d');
+
+
+            // clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // TODO: need to do auto rotation based on image orientation
+            let hRatio = canvas.width / image.naturalWidth;
+            let vRatio = canvas.height / image.naturalHeight;
+
+            let imageRatio = Math.min(hRatio, vRatio);
+            ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, image.width * imageRatio, image.height * imageRatio);
+        }
+
+        function drawBoxOnImage(image, x0, x1, y0, y1) {
+            const canvas = document.getElementById('canvas');
+            let $canvas = $("#canvas");
+
+            let hRatio = canvas.width / image.naturalWidth;
+            let vRatio = canvas.height / image.naturalHeight;
+
+            let imageRatio = Math.min(hRatio, vRatio);
+
+            let abs_x0 = x0 * image.width * imageRatio;
+            let abs_x1 = x1 * image.width * imageRatio;
+            let abs_y0 = y0 * image.height * imageRatio;
+            let abs_y1 = y1 * image.height * imageRatio;
+
+            const ctx = canvas.getContext('2d');
+            ctx.beginPath();
+            ctx.lineWidth = "6";
+            ctx.strokeStyle = "green";
+            ctx.rect(abs_x0, abs_y0, abs_x1 - abs_x0, abs_y1 - abs_y0);
+            ctx.stroke();
+        }
+
         $(document).ready(() => {
             let currentImage = null;
             let currentScaledDownImageData = null;
-            let currentImageRatio = 1.0;
+            let currentUploadId = null;
 
-            function drawImage() {
-                const canvas = document.getElementById('canvas');
-                let $canvas = $("#canvas");
+            let socket = io(REPLY_SERVICE_URL);
 
-                // Set canvas size to its visual size to avoid scaling
-                canvas.width = $canvas.width();
-                canvas.height = $canvas.height();
+            socket.on('connect', function () {
+                console.log("Connected to reply service over WS!");
+            });
 
-                const ctx = canvas.getContext('2d');
-
-
-                // clear canvas
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                // TODO: need to do auto rotation based on image orientation
-                let hRatio = canvas.width / currentImage.naturalWidth;
-                let vRatio = canvas.height / currentImage.naturalHeight;
-
-                currentImageRatio = Math.min(hRatio, vRatio);
-                ctx.drawImage(currentImage, 0, 0, currentImage.width, currentImage.height, 0, 0, currentImage.width * currentImageRatio, currentImage.height * currentImageRatio);
-            }
+            socket.on('disconnect', function () {
+                console.log("Disconnected from reply service!");
+            });
 
             function callUpload() {
                 $.ajax({
@@ -382,7 +421,16 @@
                         // $("#evaluatingView").hide();
                         // $("#success").show();
                         // $("#failure").show();
-                        console.log("Success:", data);
+                        console.log("Upload service result:", data);
+                        if (!data || !data.uploadId) {
+                            $("#evaluatingView").hide();
+                            showErrorMessage("Invalid response from upload service");
+                            return;
+                        }
+
+                        currentUploadId = data.uploadId;
+
+                        socket.emit('request_prediction_reply', {uploadId: currentUploadId});
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
                         $("#evaluatingView").hide();
@@ -390,8 +438,30 @@
                         showErrorMessage(xhr.responseText);
                     }
                 });
-
             }
+
+            socket.on('reply', function (msg) {
+                console.log("Received reply from reply service:", msg);
+                if (!msg || !msg.uploadId) {
+                    $("#evaluatingView").hide();
+                    showErrorMessage("Invalid response from reply service");
+                    return;
+                }
+                if (msg.uploadId !== currentUploadId) {
+                    console.log("Ignoring reply from reply service, uploadId mismatch");
+                    return;
+                }
+
+                $("#evaluatingView").hide();
+
+                // TODO: do we want this filtering here, or in the reply service?
+                if (msg['probability'] < 0.5) {
+                    $("#failure").show();
+                } else {
+                    $("#success").show();
+                    drawBoxOnImage(currentImage, msg.x0, msg.x1, msg.y0, msg.y1);
+                }
+            });
 
             $("#imageSelectInput").change(function () {
                 $("#evaluatingView").show();
@@ -403,7 +473,7 @@
                         currentImage = img;
                         $("#homeView").hide();
                         $("#resultView").show();
-                        drawImage();
+                        drawImage(currentImage);
                         currentScaledDownImageData = createScaledDownImage(currentImage);
                         debugImage(currentScaledDownImageData);
                         callUpload();
