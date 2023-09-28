@@ -174,13 +174,3 @@ docker run --rm \
 -e S3_BUCKET_NAME="ai-demo" \
 ${DOCKER_REPO_OVERRIDE}/prediction-service
 ```
-
-Test the image:
-```shell
-curl 'http://localhost:8081/' \
-  -H 'Accept: application/json, text/javascript, */*; q=0.01' \
-  -H 'Content-Type: application/json; charset=UTF-8' \
-  --data-raw '{"image_b64":"iVBORw0KGgoAAAANSUhEUgAAAAoAAAAOCAYAAAAWo42rAAAAAXNSR0IArs4c6QAAAfxJREFUKFMty8FLU3EAwPHv7/d7czmF2JxhguGhP6BjdCgRKsJiFA6pLBN3CKIMk/RQqKiHVRgYGQgRER46BBURJSYFGYIUWo6VOhDKydya5qbrvbe3X6DdPx/R2lyvTzWF2F1ZhTIMlJIoKdnIbRKdmCD28hWv42lEW0vDFtxVUfkfqi2Yyazz9d0Y8fH32/Ba6Iyubw7hL69Aqm1kGIrVdIrI21ESU58Zmf6G6LjYpOsvtOD1+ZFK4i4y0FqQTCzz480o8dkIfeMTiBuXQ/rkuWZ8Ph+2lqxkHarL3CSXl5h+9pzFSISeT9OI7vZLOnC6Ea/Xy9RClqfRv/QcLiO/nuBh+D6/PkZ44SQRvZ1XdbCxkVRW8uTDb3Z6ithbLtm/x6K39Q6J2UUmi1cQ4a5OHQgGWTcVw2NJXIZBYJ+HMrnKg9Z7fPk+w0xJDjHQf1MfOR6gpLSE1JqNnddU+V3MR+cZaR/ip7PGaDqGGB68pQ/U1LKjuBSPx40UsJHNsRCd43Ggn0liJKvLEUN3w/pgzSGUoRBCIaVA2ybZ1TTJeIKZuRgd3Y8QJ+rqdF9XB0pqLNNEODYeo0Ahb4ME27JYiicQ19uu6PNnGzDNHLpQQDoWRcImb1lYZg60g8ulEIMDt/Wxo7VkM39w8g4qv4nSFrZlYpmbaMfZCv8A05jsaQzcdV8AAAAASUVORK5CYII="}'
-```
- 
-You should see the same output as earlier.
