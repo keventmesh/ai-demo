@@ -72,6 +72,21 @@ jobs:
       - name: Print ai-demo-reply-service image url
         run: echo "ai-demo-reply-service image pushed to ${{ steps.push-ai-demo-reply-service.outputs.registry-paths }}"
 
+      - name: Build ai-demo-analytics-service
+        id: build-ai-demo-analytics-service
+        run: docker build services/analytics-service --file services/analytics-service/Dockerfile -t ai-demo-analytics-service:main
+      - name: Push ai-demo-analytics-service
+        id: push-ai-demo-analytics-service
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ai-demo-analytics-service
+          tags: main
+          registry: quay.io/kevent-mesh
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Print ai-demo-analytics-service image url
+        run: echo "ai-demo-analytics-service image pushed to ${{ steps.push-ai-demo-analytics-service.outputs.registry-paths }}"
+
       - name: Build ai-demo-prediction-service
         id: build-ai-demo-prediction-service
         run: docker build services/prediction-service --file services/prediction-service/Dockerfile -t ai-demo-prediction-service:main

@@ -1,0 +1,24 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: analytics-service
+  namespace: ai-demo
+  labels:
+    app: analytics-service
+spec:
+  template:
+    spec:
+      containers:
+        - image: quay.io/kevent-mesh/ai-demo-analytics-service:main
+          env:
+            # TODO: use a secret
+            - name: DB_HOST
+              value: "postgresql.ai-demo.svc"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_DATABASE
+              value: "ai-demo"
+            - name: DB_USERNAME
+              value: "ai-demo"
+            - name: DB_PASSWORD
+              value: "ai-demo"

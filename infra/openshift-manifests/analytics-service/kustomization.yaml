@@ -6,3 +6,5 @@ resources:
   - grafana-operator.yaml
   - grafana.yaml
   - postgresql-datasource.yaml
+  - analytics-broker.yaml
+  - analytics-service.yaml

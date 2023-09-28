@@ -22,6 +22,8 @@ install_postgresql
 
 # kubectl port-forward svc/grafana-service -n grafana 3000:3000 # Port-forward grafana
 
+# kubectl run -it -n ai-demo --image=postgres --env="POSTGRES_PASSWORD=ai-demo" --env="PGPASSWORD=ai-demo" psql -- psql --host=postgresql.ai-demo.svc --port=5432 --username=ai-demo # connect to postgresql server
+
 # kubectl port-forward -n minio-operator svc/minio 9445:443 # port-forward minio store
 # mc alias set ai-demo https://localhost:9445 minio minio1234 --insecure # set a minio host alias
 # kubectl port-forward -n minio-operator svc/minio-tenant-console 9444:9443 # port-forward tenant console (login with credentials in minio-storage-configuration.yaml)
