@@ -1,14 +1,15 @@
 import os
+import random
 import signal
 import sys
 
 import boto3
 import botocore
+from cloudevents.conversion import to_binary
+from cloudevents.http import CloudEvent
+from cloudevents.http import from_http
 from flask import Flask, request, make_response
 from flask_cors import CORS, cross_origin
-from cloudevents.http import CloudEvent
-from cloudevents.conversion import to_binary
-from cloudevents.http import from_http
 
 S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL")
 S3_ACCESS_KEY_ID = os.environ.get("S3_ACCESS_KEY_ID")
@@ -111,11 +112,11 @@ def prediction_request():
 
     ce_data = {
         "uploadId": "deadbeef",
-        "probability": "0.9012353451",
+        "probability": random.random() + 0.2,  # 70 chance of being positive
         "x0": "0.24543",
-        "x1": "0.356647",
+        "x1": "0.556647",
         "y0": "0.34543",
-        "y1": "0.556647"
+        "y1": "0.656647"
     }
 
     ce_attributes = {
