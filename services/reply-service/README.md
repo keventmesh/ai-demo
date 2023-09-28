@@ -38,7 +38,7 @@ docker run --rm \
 ${DOCKER_REPO_OVERRIDE}/reply-service
 ```
 
-# Testing
+# Testing - case 1: prediction happens slower than client requesting reply
 
 ```shell
 # open the test UI
@@ -56,6 +56,29 @@ curl -v "http://localhost:8082" \
   -H "Ce-time: 2020-12-02T13:49:13.77Z" \
   -H "Ce-Id: 536808d3-88be-4077-9d7a-a3f162705f79" \
   -d '{"uploadId":"deadbeef", "probability":"0.9012353451", "x0": "0.24543", "x1": "0.356647", "y0": "0.34543", "y1": "0.556647"}'
+  
+In UI, you will see this:
+> Received{"uploadId":"deadbeef","probability":"0.9012353451","x0":"0.24543","x1":"0.356647","y0":"0.34543","y1":"0.556647"}
+```
+
+# Testing - case 2: prediction happens faster than client requesting reply
+
+```shell
+# open the test UI
+open localhost:8082/test
+
+# send a CloudEvent
+curl -v "http://localhost:8082" \
+  -X POST \
+  -H "Ce-Specversion: 1.0" \
+  -H "Ce-Type: demo.prediction.event" \
+  -H "Content-Type: application/json" \
+  -H "Ce-Source: knative://foo.bar" \
+  -H "Ce-time: 2020-12-02T13:49:13.77Z" \
+  -H "Ce-Id: 536808d3-88be-4077-9d7a-a3f162705f79" \
+  -d '{"uploadId":"deadbeef", "probability":"0.9012353451", "x0": "0.24543", "x1": "0.356647", "y0": "0.34543", "y1": "0.556647"}'
+
+submit the form, with value deadbeef
   
 In UI, you will see this:
 > Received{"uploadId":"deadbeef","probability":"0.9012353451","x0":"0.24543","x1":"0.356647","y0":"0.34543","y1":"0.556647"}

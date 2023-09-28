@@ -28,8 +28,10 @@ cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 mutex = Lock()
+
 # TODO: entries here actually need a TTL to prevent leaks
-prediction_reply_requests = {}  # upload_id -> request sid (client connection id)
+replies = {}  # upload_id -> data
+client_prediction_reply_requests = {}  # upload_id -> client id (called sid in socketio)
 
 
 @app.route('/test')
@@ -55,24 +57,30 @@ def receive_cloud_event():
 
     upload_id = data['uploadId']
     with mutex:
-        if upload_id in prediction_reply_requests:
-            if upload_id not in prediction_reply_requests:
-                print("Upload ID not found in prediction reply requests")
-                return "Upload ID not found in prediction reply requests", 500
+        replies[upload_id] = data
 
+        # cases:
+        # 1. we just received a prediction for uploadId, and there is a client waiting for the reply
+        #   - send the reply to the client
+        #   - remove the client from the list of clients waiting for a reply
+        #   - remove the reply from replies list
+        # 2. we just received a prediction for uploadId, but there is no client waiting for the reply
+        #   - store the reply in replies list
+        #   - (in the websocket handler) when a client requests the reply, send it to the client immediately
+
+        if upload_id not in client_prediction_reply_requests:
+            print("No client waiting for reply, storing the data for future client requests")
+        else:
             # this is the websocket sid of the client waiting for the reply
-            sid = prediction_reply_requests[upload_id]
-            print("Found client waiting for reply", sid)
+            sid = client_prediction_reply_requests[upload_id]
+            print(f"Found client {sid} waiting for reply for the upload, sending the reply")
 
             # send the reply to the client, with whatever we received as the data
             socketio.emit('reply', data, room=sid)
 
             # remove the client from the list of clients waiting for a reply
-            del prediction_reply_requests[upload_id]
-
-            return "", 204
-        else:
-            print("No client waiting for reply")
+            del client_prediction_reply_requests[upload_id]
+            del replies[upload_id]
 
     return "", 204
 
@@ -86,10 +94,28 @@ def request_prediction_reply(message):
         print("No upload ID in request")
         return
 
+    # cases:
+    # 1. we already have a reply for the given uploadId:
+    #   - send the reply to the client
+    #   - remove the reply from replies list
+    #   - remove the client from the list of clients waiting for a reply (shouldn't be there, but just in case)
+    # 2. we don't have a reply for the given uploadId yet:
+    #   - store the client in the list of clients waiting for a reply
+    #   - (in the HTTP handler) when a reply is received, send it to the client immediately
+
     upload_id = message['uploadId']
     print("Requested reply for Upload ID", upload_id)
+
     with mutex:
-        prediction_reply_requests[upload_id] = request.sid
+        if upload_id in replies:
+            print(f"Found reply for upload ID {upload_id}, sending it to the client")
+            socketio.emit('reply', replies[upload_id], room=request.sid)
+            del replies[upload_id]
+            client_prediction_reply_requests.pop(upload_id, None)   # remove if exists
+        else:
+            print(f"No reply for upload ID {upload_id} yet, storing the client for future replies")
+            client_prediction_reply_requests[upload_id] = request.sid
+
     return "ok"
 
 
