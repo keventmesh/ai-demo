@@ -31,7 +31,33 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: reply-service
+  name: reply-service-internal-1
+  namespace: ai-demo
+spec:
+  selector:
+    app: reply-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reply-service-internal-2
+  namespace: ai-demo
+spec:
+  selector:
+    app: reply-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reply-service-exposed
   namespace: ai-demo
 spec:
   selector:
@@ -49,7 +75,7 @@ metadata:
 spec:
   to:
     kind: Service
-    name: reply-service
+    name: reply-service-exposed
   port:
     targetPort: 8080
   wildcardPolicy: None

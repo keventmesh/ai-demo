@@ -21,6 +21,7 @@ resources:
   - ui-service/configmap.yaml
   - ui-service/service.yaml
   - reply-service/service.yaml
+  - reply-service/trigger.yaml
   - prediction-service/service.yaml
   - analytics-service
 
