@@ -56,12 +56,14 @@ function patch_knative_serving(){
 function patch_ui_service_configmap(){
     # wait until services are ready
     oc wait --for=condition=Ready ksvc -n ai-demo upload-service
-    oc wait --for=condition=Ready ksvc -n ai-demo reply-service
+    # it is not easy to wait for a route
+    # oc wait --for=... route -n ai-demo reply-service
 
     uploadServiceUrl=$(oc get ksvc -n ai-demo upload-service -o jsonpath="{.status.url}")
     echo "uploadServiceUrl: ${uploadServiceUrl}"
 
-    replyServiceUrl=$(oc get ksvc -n ai-demo reply-service -o jsonpath="{.status.url}")
+    replyServiceUrl=$(oc get route -n ai-demo reply-service -o jsonpath="{.spec.host}")
+    replyServiceUrl="http://${replyServiceUrl}"
     echo "uploadServiceUrl: ${replyServiceUrl}"
 
     # patch the ui service configmap with the service urls
