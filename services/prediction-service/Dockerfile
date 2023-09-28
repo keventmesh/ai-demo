@@ -8,6 +8,9 @@ RUN pip install -r requirements.txt
 
 COPY . /opt/app
 
+# Allow statements and log messages to immediately appear in the logs
+ENV PYTHONUNBUFFERED True
+
 ENV S3_BUCKET_NAME='ai-demo'
 ENV S3_ACCESS_SSL_VERIFY='true'
 

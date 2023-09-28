@@ -8,6 +8,9 @@ RUN pip install -r requirements.txt
 
 COPY . /opt/app
 
+# Allow statements and log messages to immediately appear in the logs
+ENV PYTHONUNBUFFERED True
+
 # 1MiB
 ENV MAX_IMG_SIZE_IN_BYTES=1000000
 ENV MAX_IMG_WIDTH=640

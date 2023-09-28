@@ -8,6 +8,9 @@ RUN pip install -r requirements.txt
 
 COPY . /opt/app
 
+# Allow statements and log messages to immediately appear in the logs
+ENV PYTHONUNBUFFERED True
+
 ENV PORT=8080
 ENV WORKERS=1
 ENV THREADS=8
