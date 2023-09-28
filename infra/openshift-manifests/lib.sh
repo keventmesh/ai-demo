@@ -48,7 +48,7 @@ function delete_minio_endpoint_route(){
 
 function add_minio_webhook(){
     # wait until minio-webhook-source Knative Service are ready
-    oc wait --for=condition=Ready ksvc -n ai-demo upload-service
+    oc wait --for=condition=Ready ksvc -n ai-demo minio-webhook-source
 
     # get the internal address of the minio webhook service
     endpoint=$(oc get ksvc -n ai-demo minio-webhook-source -ojsonpath="{.status.address.url}")
