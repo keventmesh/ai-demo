@@ -1,0 +1,16 @@
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: prediction-service-trigger
+  namespace: ai-demo
+spec:
+  broker: predictions-broker
+  filter:
+    attributes:
+      type: com.knative.dev.minio.event
+  subscriber:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: prediction-service
+
