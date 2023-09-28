@@ -3,10 +3,14 @@ import signal
 import sys
 from threading import Lock
 
+from cachetools import TTLCache
 from cloudevents.http import from_http
 from flask import Flask, render_template, request
 from flask_cors import CORS, cross_origin
 from flask_socketio import SocketIO
+
+MAX_ITEMS_IN_CACHES = int(os.environ.get("MAX_ITEMS_IN_CACHES", 1000 * 1000))  # 1M client erquests, 1M predictions
+CACHE_ITEM_TTL_IN_SECONDS = int(os.environ.get("CACHE_ITEM_TTL_IN_SECONDS", 5 * 60))  # 5 minutes
 
 
 def handler(signal, frame):
@@ -29,9 +33,17 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 mutex = Lock()
 
-# TODO: entries here actually need a TTL to prevent leaks
-replies = {}  # upload_id -> data
-client_prediction_reply_requests = {}  # upload_id -> client id (called sid in socketio)
+# upload_id -> data
+replies = TTLCache(
+    maxsize=MAX_ITEMS_IN_CACHES,
+    ttl=CACHE_ITEM_TTL_IN_SECONDS
+)
+
+# upload_id -> client id (called sid in socketio)
+client_prediction_reply_requests = TTLCache(
+    maxsize=MAX_ITEMS_IN_CACHES,
+    ttl=CACHE_ITEM_TTL_IN_SECONDS
+)
 
 
 @app.route('/test')
@@ -111,7 +123,7 @@ def request_prediction_reply(message):
             print(f"Found reply for upload ID {upload_id}, sending it to the client")
             socketio.emit('reply', replies[upload_id], room=request.sid)
             del replies[upload_id]
-            client_prediction_reply_requests.pop(upload_id, None)   # remove if exists
+            client_prediction_reply_requests.pop(upload_id, None)  # remove if exists
         else:
             print(f"No reply for upload ID {upload_id} yet, storing the client for future replies")
             client_prediction_reply_requests[upload_id] = request.sid

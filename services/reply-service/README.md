@@ -14,6 +14,8 @@ pip install -r requirements.txt
 Run:
 ```shell
 PORT=8082 \
+MAX_ITEMS_IN_CACHES=1000000 \
+CACHE_ITEM_TTL_IN_SECONDS=300 \
 python app.py
 ```
 
@@ -35,6 +37,8 @@ Run the image:
 docker run --rm \
 -p 8082:8082 \
 -e PORT="8082" \
+-e MAX_ITEMS_IN_CACHES="1000000" \
+-e CACHE_ITEM_TTL_IN_SECONDS="300" \
 ${DOCKER_REPO_OVERRIDE}/reply-service
 ```
 
@@ -84,4 +88,8 @@ In UI, you will see this:
 > Received{"uploadId":"deadbeef","probability":"0.9012353451","x0":"0.24543","x1":"0.356647","y0":"0.34543","y1":"0.556647"}
 ```
 
+# Testing - case 3&4: TTL
+Do the same steps as case 1 and case 2, but:
+- Start the app by lowering the TTL
+- Wait for TTL to expire
 

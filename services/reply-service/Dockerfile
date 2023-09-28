@@ -11,6 +11,9 @@ COPY . /opt/app
 # Allow statements and log messages to immediately appear in the logs
 ENV PYTHONUNBUFFERED True
 
+ENV MAX_ITEMS_IN_CACHES=1000000
+ENV CACHE_ITEM_TTL_IN_SECONDS=300
+
 ENV PORT=8080
 ENV WORKERS=1
 ENV THREADS=8
