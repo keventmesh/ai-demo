@@ -72,3 +72,7 @@ function patch_ui_service_configmap(){
     oc patch ksvc -n ai-demo ui-service --type=json -p='[{"op": "replace", "path": "/spec/template/metadata/annotations", "value": {"dummy": '"\"$(date '+%Y%m%d%H%M%S')\""'}}]'
 
 }
+
+install_postgresql() {
+  oc process -n openshift postgresql-persistent -p POSTGRESQL_DATABASE=ai-demo -p VOLUME_CAPACITY=2Gi -p POSTGRESQL_USER=ai-demo -p POSTGRESQL_PASSWORD=ai-demo | oc apply -n ai-demo -f - || return $?
+}

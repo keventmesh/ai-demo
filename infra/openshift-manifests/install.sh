@@ -18,6 +18,10 @@ delete_minio_endpoint_route
 
 patch_ui_service_configmap
 
+install_postgresql
+
+# kubectl port-forward svc/grafana-service -n grafana 3000:3000 # Port-forward grafana
+
 # kubectl port-forward -n minio-operator svc/minio 9445:443 # port-forward minio store
 # mc alias set ai-demo https://localhost:9445 minio minio1234 --insecure # set a minio host alias
 # kubectl port-forward -n minio-operator svc/minio-tenant-console 9444:9443 # port-forward tenant console (login with credentials in minio-storage-configuration.yaml)

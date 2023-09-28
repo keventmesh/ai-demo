@@ -22,4 +22,5 @@ resources:
   - ui-service/service.yaml
   - reply-service/service.yaml
   - prediction-service/service.yaml
+  - analytics-service
 
