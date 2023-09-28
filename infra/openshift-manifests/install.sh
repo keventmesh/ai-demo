@@ -13,8 +13,9 @@ done
 
 patch_knative_serving
 
-create_minio_endpoint_route && create_bucket
+create_minio_endpoint_route && create_minio_client_config && create_bucket && add_minio_webhook
 delete_minio_endpoint_route
+delete_minio_client_config
 
 patch_ui_service_configmap
 

@@ -1,5 +1,21 @@
 #!/usr/bin/env bash
 
+function create_minio_client_config(){
+    MINIO_ENDPOINT=$(oc get route -n minio-operator minio-endpoint -o jsonpath="{.status.ingress[0].host}")
+
+    # create a temp directory on the host machine (your machine) to store the mc config
+    mkdir /tmp/mc-config
+
+    # execute operations with /tmp/mc-config mounted to the container's /mc-config directory
+    #
+    # set alias for our minio instance
+    docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    alias set ai-demo "https://${MINIO_ENDPOINT}" minio minio1234
+}
+
+function delete_minio_client_config(){
+  rm -rf /tmp/mc-config
+}
+
 function create_minio_endpoint_route() {
     # create a route for the minio service
     cat <<EOF | oc apply -f -
@@ -22,28 +38,29 @@ EOF
 }
 
 function create_bucket() {
-    # Get the MinIO endpoint
-    MINIO_ENDPOINT=$(oc get route -n minio-operator minio-endpoint -o jsonpath="{.status.ingress[0].host}")
-
-    pip install boto3
-    # Create a bucket named "ai-demo"
-    python - <<EOF
-import boto3
-s3 = boto3.resource('s3', endpoint_url='https://${MINIO_ENDPOINT}', aws_access_key_id='minio', aws_secret_access_key='minio1234', verify=False)
-s3.create_bucket(Bucket="ai-demo")
-EOF
-
-    if [ $? -eq 0 ]
-    then
-        echo "Created bucket"
-    else
-        echo "Error creating bucket"
-        return 1
-    fi
+    # create a bucket
+    docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    mb ai-demo/ai-demo --ignore-existing
 }
 
 function delete_minio_endpoint_route(){
     oc delete route -n minio-operator minio-endpoint
+}
+
+function add_minio_webhook(){
+    # wait until minio-webhook-source Knative Service are ready
+    oc wait --for=condition=Ready ksvc -n ai-demo upload-service
+
+    # get the internal address of the minio webhook service
+    endpoint=$(oc get ksvc -n ai-demo minio-webhook-source -ojsonpath="{.status.address.url}")
+
+    # set the webhook endpoint, which is our minio webhook source service
+    docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    admin config set ai-demo/ notify_webhook:PRIMARY endpoint="${endpoint}:80"
+
+    # restart the minio service
+    docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    admin service restart ai-demo/
+
+    # Subscribe to PUT events
+    docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    event add ai-demo/ai-demo arn:minio:sqs::PRIMARY:webhook --event put --ignore-existing
 }
 
 function patch_knative_serving(){
