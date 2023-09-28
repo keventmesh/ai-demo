@@ -11,7 +11,7 @@ spec:
       containers:
         - image: quay.io/kevent-mesh/ai-demo-minio-webhook-source:main
           ports:
-            - containerPort: 5000
+            - containerPort: 8080
           env:
             - name: SOURCE_DECLARATION
               value: "minio-webhook-source"

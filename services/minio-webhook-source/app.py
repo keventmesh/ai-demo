@@ -1,4 +1,6 @@
 import os
+import signal
+import sys
 
 import requests
 from cloudevents.conversion import to_binary
@@ -16,10 +18,18 @@ if not SOURCE_DECLARATION:
 print(f"Going to send events to K_SINK: {K_SINK}")
 print(f"Going to use CloudEvent source value as '{SOURCE_DECLARATION}'")
 
-application = Flask(__name__)
+def handler(signal, frame):
+    print('Gracefully shutting down')
+    sys.exit(0)
 
 
-@application.route("/", methods=["POST"])
+signal.signal(signal.SIGINT, handler)
+signal.signal(signal.SIGTERM, handler)
+
+app = Flask(__name__)
+
+
+@app.route("/", methods=["POST"])
 def receive_event():
     # request body looks like this:
     # {
@@ -76,6 +86,8 @@ def receive_event():
     #   ]
     # }
 
+    print(f"Received request: {request.json}")
+
     body = request.json
 
     if 'EventName' not in body:
@@ -118,5 +130,5 @@ def receive_event():
     return "", 204
 
 
-if __name__ == '__main__':
-    application.run()
+if __name__ == "__main__":
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))

@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.9-slim
 
 COPY requirements.txt /opt/app/requirements.txt
 
@@ -8,7 +8,12 @@ RUN pip install -r requirements.txt
 
 COPY . /opt/app
 
-EXPOSE 5000
+ENV PORT=8080
+ENV WORKERS=1
+ENV THREADS=8
+ENV TIMEOUT=0
 
-CMD ["flask", "--app", "func", "run", "--host", "0.0.0.0"]
+EXPOSE $PORT
+
+CMD exec gunicorn --bind :$PORT --workers $WORKERS --threads $THREADS --timeout $TIMEOUT app:app
 
