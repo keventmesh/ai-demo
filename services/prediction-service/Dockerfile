@@ -10,6 +10,8 @@ COPY . /opt/app
 
 # Allow statements and log messages to immediately appear in the logs
 ENV PYTHONUNBUFFERED True
+# Disable warnings in the logs about unverified HTTPS requests
+ENV PYTHONWARNINGS="ignore:Unverified HTTPS request"
 
 ENV S3_BUCKET_NAME='ai-demo'
 ENV S3_ACCESS_SSL_VERIFY='true'

@@ -10,6 +10,8 @@ COPY . /opt/app
 
 # Allow statements and log messages to immediately appear in the logs
 ENV PYTHONUNBUFFERED True
+# Disable warnings in the logs about unverified HTTPS requests
+ENV PYTHONWARNINGS="ignore:Unverified HTTPS request"
 
 # 1MiB
 ENV MAX_IMG_SIZE_IN_BYTES=1000000
