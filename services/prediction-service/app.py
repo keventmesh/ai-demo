@@ -102,16 +102,18 @@ def prediction_request():
     if "object" not in record:
         return "Missing object", 400
 
+    upload_id = record["object"]
+
     # TODO: error handling
     object = s3.get_object(Bucket=record["bucket"], Key=record["object"])
 
     # TODO: pass this to inference service
     content = object["Body"].read()
 
-    print("Received content of length", len(content))
+    print(f"Fetched image content of length {len(content)} for upload ID {upload_id}")
 
     ce_data = {
-        "uploadId": "deadbeef",
+        "uploadId": upload_id,
         "probability": random.random() + 0.2,  # 70 chance of being positive
         "x0": "0.24543",
         "x1": "0.556647",
