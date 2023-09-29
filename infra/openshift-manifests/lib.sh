@@ -81,7 +81,7 @@ function patch_ui_service_configmap(){
 
     replyServiceUrl=$(oc get route -n ai-demo reply-service -o jsonpath="{.spec.host}")
     replyServiceUrl="http://${replyServiceUrl}"
-    echo "uploadServiceUrl: ${replyServiceUrl}"
+    echo "replyServiceUrl: ${replyServiceUrl}"
 
     # patch the ui service configmap with the service urls
     oc patch configmap -n ai-demo ui-service --patch "{\"data\": {\"upload-service-url\": \"${uploadServiceUrl}\"}}"
