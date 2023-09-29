@@ -12,6 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Download model files
+        run: |
+          pip install -y gsutil
+
       - name: Build ai-demo-upload-service
         id: build-ai-demo-upload-service
         run: docker build services/upload-service --file services/upload-service/Dockerfile -t ai-demo-upload-service:main
@@ -101,3 +109,22 @@ jobs:
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Print ai-demo-prediction-service image url
         run: echo "ai-demo-prediction-service image pushed to ${{ steps.push-ai-demo-prediction-service.outputs.registry-paths }}"
+
+      - name: Download model files
+        run: |
+          gsutil cp -r gs://knative-ai-demo/kserve-models/knative_01/0001 ./services/inference-service/v1/model
+          ls -la ./services/inference-service/v1/model
+      - name: Build ai-demo-inference-service
+        id: build-ai-demo-inference-service
+        run: docker build services/inference-service/v1 --file services/inference-service/v1/Dockerfile -t ai-demo-inference-service-v1:main
+      - name: Push ai-demo-inference-service
+        id: push-ai-demo-inference-service
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ai-demo-inference-service-v1
+          tags: main
+          registry: quay.io/kevent-mesh
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Print ai-demo-inference-service image url
+        run: echo "ai-demo-inference-service image pushed to ${{ steps.push-ai-demo-inference-service.outputs.registry-paths }}"
