@@ -97,10 +97,11 @@ docker run --name=ovm \--rm -u $(id -u):$(id -g) \
 ```
 
 
-### Convert TensorFlow model to IR
+### Convert TensorFlow model to IR model (using opset11)
 
 https://docs.openvino.ai/2023.1/notebooks/101-tensorflow-classification-to-openvino-with-output.html
 https://docs.openvino.ai/2023.1/openvino_docs_MO_DG_prepare_model_convert_model_Convert_Model_From_TensorFlow.html
+https://docs.openvino.ai/2023.1/openvino_docs_ops_opset11.html
 
 ```shell
 # clean up virtual environment
@@ -138,6 +139,22 @@ ov_model = ov.convert_model(model_path)
 ov.save_model(ov_model, ir_path)
 EOF
 ````
+
+### Convert TensorFlow model to IR model (using opset10) - doesn't work
+
+https://docs.openvino.ai/2023.1/notebooks/101-tensorflow-classification-to-openvino-with-output.html
+https://docs.openvino.ai/2023.1/openvino_docs_MO_DG_prepare_model_convert_model_Convert_Model_From_TensorFlow.html
+https://docs.openvino.ai/2023.0/openvino_docs_ops_opset11.html
+
+Using version 2023.1.0 and doing the conversion resulted in this error in OVM server on RHODS:
+```
+Converting input model. Cannot create Interpolate layer map/while/Preprocessor/ResizeImage/resize/ResizeBilinear id:56 from unsupported opset: opset11
+```
+
+The OVM version on RHODS is `OpenVINO Model Server 2022.3.27eb5939`. So, I tried to use that version of OpenVino and do the conversion again.
+However, the conversion functionality is implemented in `openvino-dev` package after version 2022.3.0.
+And, I couldn't find a way to make 2023.1.0 to convert to a model that's before opset11.
+
 
 ### Running the newly converted IR model with OVM
 
@@ -220,4 +237,19 @@ curl -d '{"instances": [[[ [82,83,65],[83,86,69],[92,99,83] ]]]}' -X POST http:/
           1,
           1
         ],
+```
+
+### Use OVMS Adapter
+
+https://docs.openvino.ai/2023.1/omz_model_api_ovms_adapter.html
+
+```shell
+docker run -d --rm -v \
+ /home/user/models:/models \
+ -p 9000:9000 \
+ openvino/model_server:latest \
+ --model_path /models/model1 --model_name model1 \
+ --port 9000 --shape auto \
+ --nireq 32 --target_device CPU \--plugin_config "{\"CPU_THROUGHPUT_STREAMS\": \"CPU_THROUGHPUT_AUTO\"}"
+
 ```

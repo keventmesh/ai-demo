@@ -44,7 +44,7 @@ tree /tmp/knative01/
 # 5 directories, 4 files
 
 
-docker run -p 8500:8500 -p 8501:8501 \
+docker run --rm -p 8500:8500 -p 8501:8501 \
 --mount type=bind,source=/tmp/knative01,target=/models/knative01 \
 -e MODEL_NAME=knative01 -t tensorflow/serving
 
