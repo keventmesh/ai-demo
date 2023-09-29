@@ -395,7 +395,9 @@
             let currentScaledDownImageData = null;
             let currentUploadId = null;
 
-            let socket = io(REPLY_SERVICE_URL);
+            let socket = io(REPLY_SERVICE_URL, {
+                transports: ["websocket"],
+            });
 
             socket.on('connect', function () {
                 console.log("Connected to reply service over WS!");
@@ -430,6 +432,7 @@
 
                         currentUploadId = data.uploadId;
 
+                        console.log("Requesting prediction from reply service...", {uploadId: currentUploadId});
                         socket.emit('request_prediction_reply', {uploadId: currentUploadId});
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
