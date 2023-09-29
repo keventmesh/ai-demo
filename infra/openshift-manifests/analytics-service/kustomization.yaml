@@ -8,3 +8,4 @@ resources:
   - postgresql-datasource.yaml
   - analytics-broker.yaml
   - analytics-service.yaml
+  - predictions-trigger.yaml

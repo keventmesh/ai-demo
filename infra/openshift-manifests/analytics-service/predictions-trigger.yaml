@@ -1,0 +1,13 @@
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: analytics-service
+  namespace: ai-demo
+spec:
+  broker: predictions-broker
+  subscriber:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: analytics-service
+    uri: /predictions

@@ -17,6 +17,21 @@ def init_feedbacks_table():
     cursor.close()
 
 
+def init_predictions_table():
+    cursor = conn.cursor()
+    cursor.execute('CREATE TABLE IF NOT EXISTS predictions ('
+                   'id serial PRIMARY KEY,'
+                   'probability DECIMAL(1, 12) NOT NULL,'
+                   'upload_id VARCHAR(200) NOT NULL,'
+                   'x0 DECIMAL(1, 12) NOT NULL,'
+                   'x1 DECIMAL(1, 12) NOT NULL,'
+                   'y0 DECIMAL(1, 12) NOT NULL,'
+                   'y1 DECIMAL(1, 12) NOT NULL,'
+                   'created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP);')
+    conn.commit()
+    cursor.close()
+
+
 def handler(signal, frame):
     print('Gracefully shutting down')
     sys.exit(0)
@@ -31,6 +46,7 @@ conn = psycopg2.connect(
 )
 
 init_feedbacks_table()
+init_predictions_table()
 
 signal.signal(signal.SIGINT, handler)
 signal.signal(signal.SIGTERM, handler)
@@ -39,11 +55,11 @@ app = Flask(__name__)
 
 
 @app.route("/feedbacks", methods=["POST"])
-def receive_event():
+def receive_feedbacks():
     # request body looks like this:
     # {
     #   "feedback": <int>
-    #   "upload_id": <string>
+    #   "uploadId": <string>
     # }
 
     print(f"Received request: {request.json}")
@@ -53,13 +69,47 @@ def receive_event():
     if 'feedback' not in body:
         return f"'feedback' not in request", 400
 
-    if 'upload_id' not in body:
-        return f"'upload_id' not in request", 400
+    if 'uploadId' not in body:
+        return f"'uploadId' not in request", 400
 
     cur = conn.cursor()
 
     cur.execute('INSERT INTO feedbacks (feedback, upload_id) VALUES (%s, %s)',
-                (body['feedback'], body['upload_id']))
+                (body['feedback'], body['uploadId']))
+
+    conn.commit()
+    cur.close()
+
+    return "", 204
+
+
+@app.route("/predictions", methods=["POST"])
+def receive_predictions():
+    # request body looks like this:
+    # {
+    #     "uploadId": "deadbeef",
+    #     "probability": "0.9012353451",
+    #     "x0": "0.24543",
+    #     "x1": "0.356647",
+    #     "y0": "0.34543",
+    #     "y1": "0.556647"
+    # }
+
+    print(f"Received request: {request.json}")
+
+    body = request.json
+
+    if 'probability' not in body:
+        return f"'probability' not in request", 400
+
+    if 'uploadId' not in body:
+        return f"'uploadId' not in request", 400
+
+    cur = conn.cursor()
+
+    cur.execute(
+        'INSERT INTO predictions (probability, upload_id, x0, x1, y0, y1) VALUES (%s, %s, %s, %s, %s, %s)',
+        (body['probability'], body['uploadId'], body['x0'], body['x1'], body['y0'], body['y1']))
 
     conn.commit()
     cur.close()
