@@ -57,17 +57,16 @@ def test_ui():
 def receive_cloud_event():
     event = from_http(request.headers, request.get_data())
 
-    print(
-        f"Found {event['id']} from {event['source']} with type "
-        f"{event['type']} and specversion {event['specversion']}"
-    )
+    print("HTTP endpoint: Received CloudEvent")
 
     data = event.data
     if 'uploadId' not in data:
-        print("No upload ID in event data")
+        print("HTTP endpoint: No upload ID in event data")
         return "No upload ID in event data", 500
 
     upload_id = data['uploadId']
+    print(f"HTTP endpoint: Received CloudEvent for uploadId: {upload_id}")
+
     with mutex:
         replies[upload_id] = data
 
@@ -81,11 +80,11 @@ def receive_cloud_event():
         #   - (in the websocket handler) when a client requests the reply, send it to the client immediately
 
         if upload_id not in client_prediction_reply_requests:
-            print("No client waiting for reply, storing the data for future client requests")
+            print("HTTP endpoint: No client waiting for reply, storing the data for future client requests")
         else:
             # this is the websocket sid of the client waiting for the reply
             sid = client_prediction_reply_requests[upload_id]
-            print(f"Found client {sid} waiting for reply for the upload, sending the reply")
+            print(f"HTTP endpoint: Found client {sid} waiting for reply for the upload, sending the reply")
 
             # send the reply to the client, with whatever we received as the data
             socketio.emit('reply', data, room=sid)
@@ -100,10 +99,10 @@ def receive_cloud_event():
 @socketio.event
 @cross_origin()
 def request_prediction_reply(message):
-    print("Received prediction reply request", message)
+    print("WS endpoint:   Received prediction reply request", message)
     if 'uploadId' not in message:
         # TODO: return error message to client over WS
-        print("No upload ID in request")
+        print("WS endpoint:   No upload ID in request")
         return
 
     # cases:
@@ -116,16 +115,16 @@ def request_prediction_reply(message):
     #   - (in the HTTP handler) when a reply is received, send it to the client immediately
 
     upload_id = message['uploadId']
-    print("Requested reply for Upload ID", upload_id)
+    print(f"WS endpoint:   Requested reply for Upload ID", upload_id)
 
     with mutex:
         if upload_id in replies:
-            print(f"Found reply for upload ID {upload_id}, sending it to the client")
+            print(f"WS endpoint:   Found reply for upload ID {upload_id}, sending it to the client")
             socketio.emit('reply', replies[upload_id], room=request.sid)
             del replies[upload_id]
             client_prediction_reply_requests.pop(upload_id, None)  # remove if exists
         else:
-            print(f"No reply for upload ID {upload_id} yet, storing the client for future replies")
+            print(f"WS endpoint:   No reply for upload ID {upload_id} yet, storing the client for future replies")
             client_prediction_reply_requests[upload_id] = request.sid
 
     return "ok"

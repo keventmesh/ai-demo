@@ -105,6 +105,7 @@ def upload_request():
     upload_id = uuid.uuid4().hex
 
     try:
+        print(f"Uploading {len(base64_decoded)} bytes with key {upload_id}")
         s3.put_object(Bucket=S3_BUCKET_NAME, Key=upload_id, Body=base64_decoded)
     except Exception as e:
         print(e)

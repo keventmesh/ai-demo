@@ -72,11 +72,6 @@ def prediction_request():
 
     event = from_http(request.headers, request.get_data())
 
-    print(
-        f"Found {event['id']} from {event['source']} with type "
-        f"{event['type']} and specversion {event['specversion']}"
-    )
-
     data = event.data
 
     if "event" not in data:
@@ -104,13 +99,22 @@ def prediction_request():
 
     upload_id = record["object"]
 
-    # TODO: error handling
-    object = s3.get_object(Bucket=record["bucket"], Key=record["object"])
+    try:
+        obj = s3.get_object(Bucket=record["bucket"], Key=record["object"])
+    except Exception as e:
+        print(f"Failed to get object {record['object']} from bucket {record['bucket']}: {e}")
+        return "Failed to get object", 500
 
-    # TODO: pass this to inference service
-    content = object["Body"].read()
+    try:
+        content = obj["Body"].read()
+    except Exception as e:
+        print(f"Failed to read object body {record['object']} from bucket {record['bucket']}: {e}")
+        return "Failed to read object body", 500
 
     print(f"Fetched image content of length {len(content)} for upload ID {upload_id}")
+
+    print(f"Calling inference service for upload ID {upload_id}")
+    # TODO: call inference service here
 
     ce_data = {
         "uploadId": upload_id,
@@ -120,6 +124,7 @@ def prediction_request():
         "y0": "0.34543",
         "y1": "0.656647"
     }
+    print(f"Returning prediction result for upload ID {upload_id}: {ce_data}")
 
     ce_attributes = {
         "type": "com.knative.dev.prediction.event",

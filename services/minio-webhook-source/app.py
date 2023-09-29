@@ -18,6 +18,7 @@ if not SOURCE_DECLARATION:
 print(f"Going to send events to K_SINK: {K_SINK}")
 print(f"Going to use CloudEvent source value as '{SOURCE_DECLARATION}'")
 
+
 def handler(signal, frame):
     print('Gracefully shutting down')
     sys.exit(0)
@@ -86,15 +87,24 @@ def receive_event():
     #   ]
     # }
 
-    print(f"Received request {request.get_data()}")
+    print(f"Received request")
 
     body = request.json
 
     if 'EventName' not in body:
-        return f"'EventName' not in request", 400
+        msg = f"'EventName' not in request"
+        print(msg)
+        return msg, 400
 
     if 'Records' not in body:
-        return f"'Records' not in request", 400
+        msg = f"'Records' not in request"
+        print(msg)
+        return msg, 400
+
+    if len(body['Records']) == 0:
+        msg = f"'Records' is empty"
+        print(msg)
+        return msg, 400
 
     ce_data_records = []
     for record in body['Records']:
@@ -121,11 +131,10 @@ def receive_event():
     headers, body = to_binary(event)
 
     try:
-        print(f"Sending event to {K_SINK}", event['id'])
+        print(f"Sending event for object {ce_data_records[0]['bucket']}/{ce_data_records[0]['object']} to {K_SINK}")
         requests.post(K_SINK, data=body, headers=headers)
     except Exception as e:
-        print(f"Failed to send event to {K_SINK}")
-        print(e)
+        print(f"Failed to send event to {K_SINK} with error: {e}")
         return f"Failed to send event to {K_SINK}", 500
 
     return "", 204
