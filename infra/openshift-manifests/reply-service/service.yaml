@@ -68,10 +68,6 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 8080
-  sessionAffinity: ClientIP
-  sessionAffinityConfig:
-    clientIP:
-      timeoutSeconds: 3600
 ---
 kind: Route
 apiVersion: route.openshift.io/v1
