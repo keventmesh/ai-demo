@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="darkred" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Knative AI Demo</title>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
@@ -31,6 +34,7 @@
             color: white;
             text-shadow: -4px -4px 0 #000, 4px -4px 0 #000, -4px 4px 0 #000, 4px 4px 0 #000;
             border: 2px solid black;
+            border-top: 0;
         }
 
         #homeView .subtitle {
@@ -417,6 +421,7 @@
             });
 
             function callUpload() {
+                // TODO: we need a time out here
                 $.ajax({
                     url: UPLOAD_SERVICE_URL,
                     type: "POST",
@@ -427,11 +432,6 @@
                     contentType: "application/json; charset=utf-8",
                     dataType: "json",
                     success: function (data) {
-                        // TODO: we're now done with uploading, we will wait for the WS to send us the prediction result
-                        // TODO: hide loading overlay when we got the prediction result
-                        // $("#evaluatingView").hide();
-                        // $("#success").show();
-                        // $("#failure").show();
                         console.log("Upload service result:", data);
                         if (!data || !data.uploadId) {
                             $("#evaluatingView").hide();
@@ -469,14 +469,17 @@
                 // TODO: do we want this filtering here, or in the reply service?
                 if (msg['probability'] < 0.5) {
                     $("#failure").show();
+                    document.querySelector('meta[name="theme-color"]').setAttribute('content',  'darkred');
                 } else {
                     $("#success").show();
+                    document.querySelector('meta[name="theme-color"]').setAttribute('content',  '#00B400');
                     drawBoxOnImage(currentImage, msg.x0, msg.x1, msg.y0, msg.y1);
                 }
             });
 
             $("#imageSelectInput").change(function () {
                 $("#evaluatingView").show();
+                document.querySelector('meta[name="theme-color"]').setAttribute('content',  '#0366ad');
 
                 const file = this.files[0];
                 if (file) {
