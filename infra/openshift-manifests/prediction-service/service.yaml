@@ -25,3 +25,7 @@ spec:
               value: "false"
             - name: S3_BUCKET_NAME
               value: ai-demo
+            - name: INFERENCE_SERVICE_URL
+              value: http://inference-service.ai-demo.svc.cluster.local
+            - name: INFERENCE_SERVICE_MODEL_NAME
+              value: demo

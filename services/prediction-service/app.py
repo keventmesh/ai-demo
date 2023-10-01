@@ -1,10 +1,14 @@
+import io
 import os
-import random
 import signal
 import sys
+import time
 
 import boto3
 import botocore
+import numpy as np
+import requests
+from PIL import Image
 from cloudevents.conversion import to_binary
 from cloudevents.http import CloudEvent
 from cloudevents.http import from_http
@@ -17,6 +21,8 @@ S3_ACCESS_KEY_SECRET = os.environ.get("S3_ACCESS_KEY_SECRET")
 S3_ACCESS_SSL_VERIFY = os.environ.get("S3_ACCESS_SSL_VERIFY", "true").lower() == "true"
 S3_BUCKET_NAME = os.environ.get("S3_BUCKET_NAME")
 SOURCE_DECLARATION = os.environ.get("SOURCE_DECLARATION")
+INFERENCE_SERVICE_URL = os.environ.get("INFERENCE_SERVICE_URL")
+INFERENCE_SERVICE_MODEL_NAME = os.environ.get("INFERENCE_SERVICE_MODEL_NAME")
 
 if not S3_ENDPOINT_URL:
     raise Exception("Missing S3_ENDPOINT_URL")
@@ -28,8 +34,16 @@ if not S3_BUCKET_NAME:
     raise Exception("Missing S3_BUCKET_NAME")
 if not SOURCE_DECLARATION:
     raise Exception("Missing SOURCE_DECLARATION")
+if not INFERENCE_SERVICE_URL:
+    raise Exception("Missing INFERENCE_SERVICE_URL")
+if not INFERENCE_SERVICE_MODEL_NAME:
+    raise Exception("Missing INFERENCE_SERVICE_MODEL_NAME")
 
 print(f"Going to use CloudEvent source value as '{SOURCE_DECLARATION}'")
+print(f"Going to use inference service URL as '{INFERENCE_SERVICE_URL}'")
+print(f"Going to use inference service model name as '{INFERENCE_SERVICE_MODEL_NAME}'")
+print(f"Going to use S3 endpoint URL as '{S3_ENDPOINT_URL}'")
+print(f"Going to use S3 bucket name as '{S3_BUCKET_NAME}'")
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -97,33 +111,84 @@ def prediction_request():
     if "object" not in record:
         return "Missing object", 400
 
+    bucket = record["bucket"]
     upload_id = record["object"]
 
     try:
-        obj = s3.get_object(Bucket=record["bucket"], Key=record["object"])
+        obj = s3.get_object(Bucket=bucket, Key=upload_id)
     except Exception as e:
-        print(f"Failed to get object {record['object']} from bucket {record['bucket']}: {e}")
+        print(f"Failed to get object {upload_id} from bucket {bucket}: {e}")
         return "Failed to get object", 500
 
     try:
         content = obj["Body"].read()
     except Exception as e:
-        print(f"Failed to read object body {record['object']} from bucket {record['bucket']}: {e}")
+        print(f"Failed to read object body {upload_id} from bucket {bucket}: {e}")
         return "Failed to read object body", 500
 
     print(f"Fetched image content of length {len(content)} for upload ID {upload_id}")
 
     print(f"Calling inference service for upload ID {upload_id}")
-    # TODO: call inference service here
+    call_start_time = time.time()
 
-    ce_data = {
-        "uploadId": upload_id,
-        "probability": random.random() + 0.2,  # 70 chance of being positive
-        "x0": "0.24543",
-        "x1": "0.556647",
-        "y0": "0.34543",
-        "y1": "0.656647"
-    }
+    image = Image.open(io.BytesIO(content))
+    image_np = np.array(image)
+    # drop alpha channel
+    image_np = image_np[:, :, :3]
+
+    URL = f'{INFERENCE_SERVICE_URL}/v1/models/{INFERENCE_SERVICE_MODEL_NAME}:predict'
+    payload = {'instances': [image_np.tolist()]}
+
+    try:
+        call = requests.post(URL, json=payload)
+    except Exception as e:
+        print(f"Failed to call inference service for uploadId {upload_id}")
+        print(e)
+        return "Failed to call inference service", 500
+
+    call_end_time = time.time()
+    print('Inference call took {} seconds'.format(call_end_time - call_start_time))
+
+    inference = call.json()
+
+    if "predictions" not in inference:
+        print(f"Failed to get predictions from inference service for uploadId {upload_id}")
+        return "Failed to get predictions from inference service", 500
+
+    # we only call with one image, so we only have one prediction
+    predictions = inference['predictions'][0]
+
+    if "num_detections" not in predictions or int(predictions["num_detections"]) == 0:
+        ce_data = {
+            "uploadId": upload_id,
+            "probability": 0,
+            "x0": "0",
+            "x1": "0",
+            "y0": "0",
+            "y1": "0"
+        }
+    else:
+        # highest score is the first one
+        if "detection_scores" in predictions and len(predictions["detection_scores"]) > 0:
+            highest_score = predictions["detection_scores"][0]
+        else:
+            highest_score = 0
+
+        if "detection_boxes" in predictions and len(predictions["detection_boxes"]) > 0:
+            highest_score_box = predictions["detection_boxes"][0]
+        else:
+            highest_score_box = [0, 0, 0, 0]
+
+        ce_data = {
+            "uploadId": upload_id,
+            "probability": highest_score,
+            # weird that Ys come first
+            "y0": highest_score_box[0],
+            "x0": highest_score_box[1],
+            "y1": highest_score_box[2],
+            "x1": highest_score_box[3],
+        }
+
     print(f"Returning prediction result for upload ID {upload_id}: {ce_data}")
 
     ce_attributes = {

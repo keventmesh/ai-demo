@@ -46,6 +46,8 @@ kubectl port-forward pod/minio --address 0.0.0.0 9445 9090 -n minio-dev --addres
 
 Or, if you already have a Minio instance running on Kubernetes, you can use that.
 
+Start the Inference service. See [here](../inference-service/README.md) for details.
+
 ```shell
 kubectl port-forward -n minio-operator svc/minio 9445:443 --address=0.0.0.0
 ```
@@ -102,6 +104,8 @@ S3_ACCESS_KEY_ID="minio" \
 S3_ACCESS_KEY_SECRET="minio1234" \
 S3_ACCESS_SSL_VERIFY="false" \
 S3_BUCKET_NAME="ai-demo" \
+INFERENCE_SERVICE_URL="http://localhost:8501" \
+INFERENCE_SERVICE_MODEL_NAME="demo" \
 python app.py
 ```
 
@@ -172,5 +176,9 @@ docker run --rm \
 -e S3_ACCESS_KEY_SECRET="minio1234" \
 -e S3_ACCESS_SSL_VERIFY="false" \
 -e S3_BUCKET_NAME="ai-demo" \
+-e INFERENCE_SERVICE_URL="http://localhost:8501" \
+-e INFERENCE_SERVICE_MODEL_NAME="demo" \
+INFERENCE_SERVICE_URL
+INFERENCE_SERVICE_MODEL_NAME
 ${DOCKER_REPO_OVERRIDE}/prediction-service
 ```
