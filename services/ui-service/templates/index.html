@@ -201,6 +201,9 @@
 </head>
 <body>
 
+<!-- invisible file input-->
+<input type="file" id="imageSelectInput" name="image" accept="image/*" capture="environment">
+
 <div id="container">
     <div id="homeView">
         <div></div>
@@ -216,7 +219,6 @@
             <div class="buttons">
                 <div class="imageSelectButton" class="btn btn-outline-light btn-lg">
                     <img class="touchImg" src="static/touch_button.svg"/>
-                    <input type="file" id="imageSelectInput" name="image" accept="image/*">
                 </div>
             </div>
             <div class="bottomTitle">
@@ -405,6 +407,13 @@
 
             socket.on('disconnect', function () {
                 console.log("Disconnected from reply service!");
+            });
+
+            $("#homeView").on("click", function (e) {
+                console.log("Opening file selection");
+                $('#imageSelectInput').focus().trigger('click');
+                e.preventDefault();
+                return false;
             });
 
             function callUpload() {
