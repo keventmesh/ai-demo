@@ -6,7 +6,6 @@ resources:
   - github.com/redhat-cop/gitops-catalog/serverless-operator/instance/knative-serving/overlays/default?ref=main
   - github.com/redhat-cop/gitops-catalog/serverless-operator/instance/knative-eventing/base?ref=main
   - knative-kafka.yaml
-  - https://github.com/redhat-cop/gitops-catalog/rhods-operator/operator/overlays/stable?ref=main
   - minio-operator-namespace.yaml
   - minio-operator-operatorgroup.yaml
   - minio-operator-subscription.yaml
