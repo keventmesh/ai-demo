@@ -75,7 +75,7 @@ def receive_feedbacks():
 
     cur.execute('INSERT INTO feedbacks (feedback, upload_id) '
                 'VALUES (%s, %s) '
-                'ON CONFLICTS (upload_id) DO NOTHING',
+                'ON CONFLICT (upload_id) DO NOTHING',
                 (body['feedback'], body['uploadId']))
 
     conn.commit()
@@ -110,7 +110,7 @@ def receive_predictions():
     cur.execute(
         'INSERT INTO predictions (probability, upload_id, x0, x1, y0, y1) '
         'VALUES (%s, %s, %s, %s, %s, %s) '
-        'ON CONFLICTS (upload_id) DO NOTHING',
+        'ON CONFLICT (upload_id) DO NOTHING',
         (body['probability'], body['uploadId'], body['x0'], body['x1'], body['y0'], body['y1']))
 
     conn.commit()
