@@ -321,11 +321,13 @@
         const MAX_IMAGE_HEIGHT = parseInt("{{ max_img_height }}", 10);
         const UPLOAD_SERVICE_URL = "{{ upload_service_url }}";
         const REPLY_SERVICE_URL = "{{ reply_service_url }}";
+        const FEEDBACK_SERVICE_URL = "{{ feedback_service_url }}";
 
         console.log("MAX_IMAGE_WIDTH:", MAX_IMAGE_WIDTH);
         console.log("MAX_IMAGE_HEIGHT:", MAX_IMAGE_HEIGHT);
         console.log("UPLOAD_SERVICE_URL:", UPLOAD_SERVICE_URL);
         console.log("REPLY_SERVICE_URL:", REPLY_SERVICE_URL);
+        console.log("FEEDBACK_SERVICE_URL:", FEEDBACK_SERVICE_URL);
 
         function debugImage(imageData) {
             try {
@@ -547,16 +549,7 @@
                 transports: ["websocket"],
             });
 
-            socket.on('connect', function () {
-                console.log("Connected to reply service over WS!");
-            });
-
-            socket.on('disconnect', function () {
-                console.log("Disconnected from reply service!");
-            });
-
-
-            function callUpload() {
+            function uploadFile() {
                 $.ajax({
                     url: UPLOAD_SERVICE_URL,
                     type: "POST",
@@ -569,7 +562,7 @@
                     timeout: 30000, // 30 seconds
                     //
                     success: function (data) {
-                        console.log("Upload service result:", data);
+                        console.log("Upload file success:", data);
                         if (!data || !data.uploadId) {
                             view.error("Invalid response from upload service");
                             return;
@@ -582,8 +575,31 @@
                     },
                     //
                     error: function (xhr) {
-                        console.log("Error:", xhr.status, "-", xhr.responseText);
+                        console.log("Error uploading file:", xhr.status, "-", xhr.responseText);
                         view.error(xhr.responseText);
+                    }
+                });
+            }
+
+            function sendFeedback(starRating) {
+                // fire and forget
+                $.ajax({
+                    url: FEEDBACK_SERVICE_URL,
+                    type: "POST",
+                    data: JSON.stringify({
+                        "uploadId": state.currentUploadId,
+                        "feedback": starRating,
+                    }),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    timeout: 30000, // 30 seconds
+                    //
+                    success: function (data) {
+                        console.log("Send feedback success:", data);
+                    },
+                    //
+                    error: function (xhr) {
+                        console.log("Send feedback error:", xhr.status, "-", xhr.responseText);
                     }
                 });
             }
@@ -618,7 +634,7 @@
                         view.drawImage(state.currentImage);
                         state.currentScaledDownImageData = createScaledDownImage(state.currentImage);
                         // debugImage(state.currentScaledDownImageData);
-                        callUpload();
+                        uploadFile();
                     };
                     img.src = URL.createObjectURL(file);
                 }
@@ -631,11 +647,19 @@
             });
 
             view.on('thumbsDown', function () {
-                // TODO: fire and forget feedback
+                sendFeedback(1);
             });
 
             view.on('thumbsUp', function () {
-                // TODO: fire and forget feedback
+                sendFeedback(5);
+            });
+
+            socket.on('connect', function () {
+                console.log("Connected to reply service over WS!");
+            });
+
+            socket.on('disconnect', function () {
+                console.log("Disconnected from reply service!");
             });
 
             // TODO: remove
