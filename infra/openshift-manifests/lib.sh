@@ -83,9 +83,13 @@ function patch_ui_service_configmap(){
     replyServiceUrl="http://${replyServiceUrl}"
     echo "replyServiceUrl: ${replyServiceUrl}"
 
+    feedbackServiceUrl=$(oc get ksvc -n ai-demo feedback-service -o jsonpath="{.status.url}")
+    echo "feedbackServiceUrl: ${feedbackServiceUrl}"
+
     # patch the ui service configmap with the service urls
     oc patch configmap -n ai-demo ui-service --patch "{\"data\": {\"upload-service-url\": \"${uploadServiceUrl}\"}}"
     oc patch configmap -n ai-demo ui-service --patch "{\"data\": {\"reply-service-url\": \"${replyServiceUrl}\"}}"
+    oc patch configmap -n ai-demo ui-service --patch "{\"data\": {\"feedback-service-url\": \"${feedbackServiceUrl}\"}}"
 
     # touch the ksvc so that it is redeployed with the new configmap
     oc patch ksvc -n ai-demo ui-service --type=json -p='[{"op": "replace", "path": "/spec/template/metadata/annotations", "value": {"dummy": '"\"$(date '+%Y%m%d%H%M%S')\""'}}]'

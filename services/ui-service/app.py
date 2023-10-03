@@ -10,14 +10,18 @@ MAX_IMG_HEIGHT = int(os.environ.get("MAX_IMG_HEIGHT", 640))
 
 UPLOAD_SERVICE_URL = os.environ.get("UPLOAD_SERVICE_URL")
 REPLY_SERVICE_URL = os.environ.get("REPLY_SERVICE_URL")
+FEEDBACK_SERVICE_URL = os.environ.get("FEEDBACK_SERVICE_URL")
 
 if not UPLOAD_SERVICE_URL:
     raise Exception("Missing UPLOAD_SERVICE_URL")
 if not REPLY_SERVICE_URL:
     raise Exception("Missing REPLY_SERVICE_URL")
+if not FEEDBACK_SERVICE_URL:
+    raise Exception("Missing FEEDBACK_SERVICE_URL")
 
 print("UPLOAD_SERVICE_URL: ", UPLOAD_SERVICE_URL)
 print("REPLY_SERVICE_URL: ", REPLY_SERVICE_URL)
+print("FEEDBACK_SERVICE_URL: ", FEEDBACK_SERVICE_URL)
 print("MAX_IMG_WIDTH: ", MAX_IMG_WIDTH)
 print("MAX_IMG_HEIGHT: ", MAX_IMG_HEIGHT)
 
@@ -41,7 +45,8 @@ def send_client_html():
                            max_img_width=MAX_IMG_WIDTH,
                            max_img_height=MAX_IMG_HEIGHT,
                            upload_service_url=UPLOAD_SERVICE_URL,
-                           reply_service_url=REPLY_SERVICE_URL
+                           reply_service_url=REPLY_SERVICE_URL,
+                           feedback_service_url=FEEDBACK_SERVICE_URL
                            )
 
 

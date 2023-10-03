@@ -20,3 +20,8 @@ spec:
                 configMapKeyRef:
                   name: ui-service
                   key: reply-service-url
+            - name: FEEDBACK_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: ui-service
+                  key: feedback-service-url

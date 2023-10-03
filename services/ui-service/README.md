@@ -6,7 +6,7 @@ This image is published at `quay.io/kevent-mesh/ai-demo-ui-service`.
 
 # Pre-requisites
 
-You need to have upload-service and the reply-service running first. See readme files in those folders.
+You need to have the upload-service, reply-service and feedback-service running first. See readme files in those folders.
 
 # Running locally
 
@@ -26,6 +26,7 @@ Run:
 PORT=8080 \
 UPLOAD_SERVICE_URL="http://localhost:8081" \
 REPLY_SERVICE_URL="http://localhost:8082" \
+FEEDBACK_SERVICE_URL="http://localhost:8085" \
 python app.py
 ```
 
@@ -55,6 +56,7 @@ docker run --rm \
 -e PORT="8080" \
 -e UPLOAD_SERVICE_URL="http://192.168.2.160:8081" \
 -e REPLY_SERVICE_URL="http://192.168.2.160:8082" \
+-e FEEDBACK_SERVICE_URL="http://192.168.2.160:8085" \
 ${DOCKER_REPO_OVERRIDE}/ui-service
 ```
 
