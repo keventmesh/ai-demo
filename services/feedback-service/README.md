@@ -81,7 +81,7 @@ ${DOCKER_REPO_OVERRIDE}/feedback-service
 
 Test:
 ```shell
-curl localhost:8085 -i -X POST -H "Content-Type: application/json" -d '{"uploadId": "deadbeef", "feedback": "5"}'
+curl localhost:8085 -i -X POST -H "Content-Type: application/json" -d '{"uploadId": "deadbeef", "feedback": 5}'
 ```
 
 See the outcome at https://webhook.site/#!/48cdb072-bcf8-470e-8746-90ac76415316/9f30a497-8b43-49a9-8f4b-25f1a2366bfe/1
