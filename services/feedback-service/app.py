@@ -6,6 +6,7 @@ import requests
 from cloudevents.conversion import to_binary
 from cloudevents.http import CloudEvent
 from flask import Flask, request
+from flask_cors import CORS, cross_origin
 
 K_SINK = os.environ.get("K_SINK")
 SOURCE_DECLARATION = os.environ.get("SOURCE_DECLARATION")
@@ -28,9 +29,12 @@ signal.signal(signal.SIGINT, handler)
 signal.signal(signal.SIGTERM, handler)
 
 app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 
 @app.route("/", methods=["POST"])
+@cross_origin()
 def receive_feedback():
     # request body looks like this:
     # {
