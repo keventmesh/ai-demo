@@ -296,8 +296,10 @@
         console.log("UPLOAD_SERVICE_URL:", UPLOAD_SERVICE_URL);
         console.log("REPLY_SERVICE_URL:", REPLY_SERVICE_URL);
 
+        // TODO: move into the view Class
         const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
 
+        // TODO: move into the view Class
         function showErrorMessage(message) {
             $("#errorModal .modal-body").text(message);
             errorModal.show();
@@ -376,7 +378,6 @@
 
         function drawBoxOnImage(image, x0, x1, y0, y1) {
             const canvas = document.getElementById('canvas');
-            let $canvas = $("#canvas");
 
             let hRatio = canvas.width / image.naturalWidth;
             let vRatio = canvas.height / image.naturalHeight;
@@ -401,12 +402,58 @@
         }
 
         $(document).ready(() => {
-            const $homeView = $("#homeView");
-            const $evaluatingView = $("#evaluatingView");
-            const $resultView = $("#resultView");
-            const $successView = $("#successView");
-            const $failureView = $("#failureView");
+            class View{
+                constructor() {
+                    this.$homeView = $("#homeView");
+                    this.$evaluatingView = $("#evaluatingView");
+                    this.$resultView = $("#resultView");
+                    this.$successView = $("#successView");
+                    this.$failureView = $("#failureView");
+                }
 
+                initialize() {
+                    this.$homeView.show();
+                    this.$evaluatingView.hide();
+                    this.$resultView.hide();
+                    this.$successView.hide();
+                    this.$failureView.hide();
+
+                    this.$homeView.on("click", function (e) {
+                        $('#imageSelectInput').focus().trigger('click');
+                        e.preventDefault();
+                        return false;
+                    });
+                }
+
+                evaluating() {
+                    this.$homeView.hide();
+                    this.$resultView.show();
+                    this.$evaluatingView.show();
+                    changeAddressBarColor('#0366ad');
+                }
+
+                error(message) {
+                    this.$evaluatingView.hide();
+                    this.$homeView.show();
+                    // TODO: clean up file input and other stuff
+                    showErrorMessage(message);
+                }
+
+                predictionFail(){
+                    this.$evaluatingView.hide();
+                    this.$failureView.show();
+                    changeAddressBarColor('darkred');
+                }
+
+                predictionSuccess() {
+                    this.$evaluatingView.hide();
+                    this.$successView.show();
+                    changeAddressBarColor('#00B400');
+                }
+            }
+
+            const view = new View();
+            view.initialize();
 
             let currentImage = null;
             let currentScaledDownImageData = null;
@@ -424,12 +471,6 @@
                 console.log("Disconnected from reply service!");
             });
 
-            $homeView.on("click", function (e) {
-                $('#imageSelectInput').focus().trigger('click');
-                e.preventDefault();
-                return false;
-            });
-
 
             function callUpload() {
                 $.ajax({
@@ -445,8 +486,7 @@
                     success: function (data) {
                         console.log("Upload service result:", data);
                         if (!data || !data.uploadId) {
-                            $evaluatingView.hide();
-                            showErrorMessage("Invalid response from upload service");
+                            view.error("Invalid response from upload service");
                             return;
                         }
 
@@ -456,9 +496,8 @@
                         socket.emit('request_prediction_reply', {uploadId: currentUploadId});
                     },
                     error: function (xhr) {
-                        $evaluatingView.hide();
                         console.log("Error:", xhr.status, "-", xhr.responseText);
-                        showErrorMessage(xhr.responseText);
+                        view.error(xhr.responseText);
                     }
                 });
             }
@@ -466,8 +505,7 @@
             socket.on('reply', function (msg) {
                 console.log("Received reply from reply service:", msg);
                 if (!msg || !msg.uploadId) {
-                    $evaluatingView.hide();
-                    showErrorMessage("Invalid response from reply service");
+                    view.error("Invalid response from reply service");
                     return;
                 }
                 if (msg.uploadId !== currentUploadId) {
@@ -475,30 +513,23 @@
                     return;
                 }
 
-                $evaluatingView.hide();
-
                 // TODO: do we want this filtering here, or in the reply service?
                 if (msg['probability'] < 0.5) {
-                    $failureView.show();
-                    changeAddressBarColor('darkred');
+                    view.predictionFail();
                 } else {
-                    $successView.show();
-                    changeAddressBarColor('#00B400');
+                    view.predictionSuccess();
                     drawBoxOnImage(currentImage, msg.x0, msg.x1, msg.y0, msg.y1);
                 }
             });
 
             $("#imageSelectInput").change(function () {
-                $evaluatingView.show();
-                changeAddressBarColor('#0366ad');
+                view.evaluating();
 
                 const file = this.files[0];
                 if (file) {
                     const img = new Image();
                     img.onload = function () {
                         currentImage = img;
-                        $homeView.hide();
-                        $resultView.show();
                         drawImage(currentImage);
                         currentScaledDownImageData = createScaledDownImage(currentImage);
                         // debugImage(currentScaledDownImageData);
