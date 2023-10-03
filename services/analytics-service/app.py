@@ -11,7 +11,7 @@ def init_feedbacks_table():
     cursor.execute('CREATE TABLE IF NOT EXISTS feedbacks ('
                    'id serial PRIMARY KEY,'
                    'feedback INT NOT NULL,'
-                   'upload_id VARCHAR(200) NOT NULL,'
+                   'upload_id VARCHAR(200) UNIQUE NOT NULL,'
                    'created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP);')
     conn.commit()
     cursor.close()
@@ -21,12 +21,12 @@ def init_predictions_table():
     cursor = conn.cursor()
     cursor.execute('CREATE TABLE IF NOT EXISTS predictions ('
                    'id serial PRIMARY KEY,'
-                   'probability DECIMAL(1, 12) NOT NULL,'
-                   'upload_id VARCHAR(200) NOT NULL,'
-                   'x0 DECIMAL(1, 12) NOT NULL,'
-                   'x1 DECIMAL(1, 12) NOT NULL,'
-                   'y0 DECIMAL(1, 12) NOT NULL,'
-                   'y1 DECIMAL(1, 12) NOT NULL,'
+                   'probability DECIMAL(13, 12) NOT NULL,'
+                   'upload_id VARCHAR(200) UNIQUE NOT NULL,'
+                   'x0 DECIMAL(13, 12) NOT NULL,'
+                   'x1 DECIMAL(13, 12) NOT NULL,'
+                   'y0 DECIMAL(13, 12) NOT NULL,'
+                   'y1 DECIMAL(13, 12) NOT NULL,'
                    'created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP);')
     conn.commit()
     cursor.close()
@@ -66,15 +66,16 @@ def receive_feedbacks():
 
     body = request.json
 
-    if 'feedback' not in body:
-        return f"'feedback' not in request", 400
-
-    if 'uploadId' not in body:
-        return f"'uploadId' not in request", 400
+    required_fields = ['feedback', 'uploadId']
+    for x in required_fields:
+        if x not in body:
+            return f"'{x}' not in request", 400
 
     cur = conn.cursor()
 
-    cur.execute('INSERT INTO feedbacks (feedback, upload_id) VALUES (%s, %s)',
+    cur.execute('INSERT INTO feedbacks (feedback, upload_id) '
+                'VALUES (%s, %s) '
+                'ON CONFLICTS (upload_id) DO NOTHING',
                 (body['feedback'], body['uploadId']))
 
     conn.commit()
@@ -99,16 +100,17 @@ def receive_predictions():
 
     body = request.json
 
-    if 'probability' not in body:
-        return f"'probability' not in request", 400
-
-    if 'uploadId' not in body:
-        return f"'uploadId' not in request", 400
+    required_fields = ['probability', 'uploadId', 'x0', 'x1', 'y0', 'y1']
+    for x in required_fields:
+        if x not in body:
+            return f"'{x}' not in request", 400
 
     cur = conn.cursor()
 
     cur.execute(
-        'INSERT INTO predictions (probability, upload_id, x0, x1, y0, y1) VALUES (%s, %s, %s, %s, %s, %s)',
+        'INSERT INTO predictions (probability, upload_id, x0, x1, y0, y1) '
+        'VALUES (%s, %s, %s, %s, %s, %s) '
+        'ON CONFLICTS (upload_id) DO NOTHING',
         (body['probability'], body['uploadId'], body['x0'], body['x1'], body['y0'], body['y1']))
 
     conn.commit()
