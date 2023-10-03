@@ -1,0 +1,38 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: admin-service
+  namespace: ai-demo
+  labels:
+    app: admin-service
+spec:
+  template:
+    spec:
+      containers:
+        - image: quay.io/kevent-mesh/ai-demo-admin-service:main
+          ports:
+            - containerPort: 8080
+          env:
+            # TODO: use a secret
+            - name: DB_HOST
+              value: "postgresql.ai-demo.svc"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_DATABASE
+              value: "ai-demo"
+            - name: DB_USERNAME
+              value: "ai-demo"
+            - name: DB_PASSWORD
+              value: "ai-demo"
+            - name: SOURCE_DECLARATION
+              value: "prediction-service"
+            - name: S3_ENDPOINT_URL
+              value: https://minio.minio-operator.svc.cluster.local
+            - name: S3_ACCESS_KEY_ID
+              value: minio
+            - name: S3_ACCESS_KEY_SECRET
+              value: minio1234
+            - name: S3_ACCESS_SSL_VERIFY
+              value: "false"
+            - name: S3_BUCKET_NAME
+              value: ai-demo
