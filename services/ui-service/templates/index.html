@@ -327,15 +327,6 @@
         console.log("UPLOAD_SERVICE_URL:", UPLOAD_SERVICE_URL);
         console.log("REPLY_SERVICE_URL:", REPLY_SERVICE_URL);
 
-        // TODO: move into the view Class
-        const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
-
-        // TODO: move into the view Class
-        function showErrorMessage(message) {
-            $("#errorModal .modal-body").text(message);
-            errorModal.show();
-        }
-
         function debugImage(imageData) {
             try {
                 let img = new Image();
@@ -351,18 +342,18 @@
         }
 
         function getImageData(image) {
-            let canvas = document.createElement('canvas');
-            canvas.width = image.naturalWidth;
-            canvas.height = image.naturalHeight;
+            // create a hidden canvas
+            let hiddenCanvas = document.createElement('canvas');
+            hiddenCanvas.width = image.naturalWidth;
+            hiddenCanvas.height = image.naturalHeight;
 
-            let ctx = canvas.getContext('2d');
+            let ctx = hiddenCanvas.getContext('2d');
             ctx.drawImage(image, 0, 0);
 
-            return canvas.toDataURL();
+            return hiddenCanvas.toDataURL();
         }
 
         function createScaledDownImage(image) {
-            // create a hidden canvas to scale down the image
             let hRatio = MAX_IMAGE_WIDTH / image.naturalWidth;
             let vRatio = MAX_IMAGE_HEIGHT / image.naturalHeight;
 
@@ -375,137 +366,182 @@
             let scaledDownWidth = image.naturalWidth * ratio;
             let scaledDownHeight = image.naturalHeight * ratio;
 
-            let canvas = document.createElement('canvas');
-            canvas.width = scaledDownWidth;
-            canvas.height = scaledDownHeight;
+            // create a hidden canvas to scale down the image
+            let hiddenCanvas = document.createElement('canvas');
+            hiddenCanvas.width = scaledDownWidth;
+            hiddenCanvas.height = scaledDownHeight;
 
-            let ctx = canvas.getContext('2d');
+            let ctx = hiddenCanvas.getContext('2d');
             ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, scaledDownWidth, scaledDownHeight);
 
-            return canvas.toDataURL();
-        }
-
-        function drawImage(image) {
-            const canvas = document.getElementById('canvas');
-            let $canvas = $("#canvas");
-
-            // Set canvas size to its visual size to avoid scaling
-            canvas.width = $canvas.width();
-            canvas.height = $canvas.height();
-
-            const ctx = canvas.getContext('2d');
-
-
-            // clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // TODO: need to do auto rotation based on image orientation
-            let hRatio = canvas.width / image.naturalWidth;
-            let vRatio = canvas.height / image.naturalHeight;
-
-            let imageRatio = Math.min(hRatio, vRatio);
-            ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, image.width * imageRatio, image.height * imageRatio);
-        }
-
-        function drawBoxOnImage(image, x0, x1, y0, y1) {
-            const canvas = document.getElementById('canvas');
-
-            let hRatio = canvas.width / image.naturalWidth;
-            let vRatio = canvas.height / image.naturalHeight;
-
-            let imageRatio = Math.min(hRatio, vRatio);
-
-            let abs_x0 = x0 * image.width * imageRatio;
-            let abs_x1 = x1 * image.width * imageRatio;
-            let abs_y0 = y0 * image.height * imageRatio;
-            let abs_y1 = y1 * image.height * imageRatio;
-
-            const ctx = canvas.getContext('2d');
-            ctx.beginPath();
-            ctx.lineWidth = "6";
-            ctx.strokeStyle = "green";
-            ctx.rect(abs_x0, abs_y0, abs_x1 - abs_x0, abs_y1 - abs_y0);
-            ctx.stroke();
+            return hiddenCanvas.toDataURL();
         }
 
         function changeAddressBarColor(color) {
             document.querySelector('meta[name="theme-color"]').setAttribute('content', color);
         }
 
-        $(document).ready(() => {
-            class View {
-                constructor() {
-                    this.$homeView = $("#homeView");
-                    this.$evaluatingView = $("#evaluatingView");
-                    this.$resultView = $("#resultView");
-                    this.$successView = $("#successView");
-                    this.$failureView = $("#failureView");
-                    this.$doneButtons = $("#doneButtons");
-                }
+        class View {
+            constructor() {
+                this.$homeView = $("#homeView");
+                this.$evaluatingView = $("#evaluatingView");
+                this.$resultView = $("#resultView");
+                this.$successView = $("#successView");
+                this.$failureView = $("#failureView");
+                this.$doneButtons = $("#doneButtons");
 
-                reset() {
-                    this.$homeView.hide();
-                    this.$evaluatingView.hide();
-                    this.$resultView.hide();
-                    this.$successView.hide();
-                    this.$failureView.hide();
-                    this.$doneButtons.hide();
+                //
+                this.errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
 
-                    // TODO: clear canvas
-                    // clear file input
-                    $("#imageSelectInput").val('');
-                }
-
-                initialize() {
-                    this.reset();
-                    this.home();
-
-                    this.$homeView.on("click", function (e) {
-                        $('#imageSelectInput').focus().trigger('click');
-                        e.preventDefault();
-                        return false;
-                    });
-                }
-
-                home() {
-                    this.$homeView.show();
-                    changeAddressBarColor('darkred');
-                }
-
-                evaluating() {
-                    this.$homeView.hide();
-                    this.$resultView.show();
-                    this.$evaluatingView.show();
-                    changeAddressBarColor('#0366ad');
-                }
-
-                error(message) {
-                    this.reset();
-                    this.home();
-                    showErrorMessage(message);
-                }
-
-                predictionFail() {
-                    this.$evaluatingView.hide();
-                    this.$failureView.show();
-                    this.$doneButtons.show();
-                    changeAddressBarColor('darkred');
-                }
-
-                predictionSuccess() {
-                    this.$evaluatingView.hide();
-                    this.$successView.show();
-                    this.$doneButtons.show();
-                    changeAddressBarColor('#00B400');
-                }
+                //
+                this.$imageSelectInput = $("#imageSelectInput");
+                this.$retryButton = $("#retryButton");
+                this.$thumbsDownButton = $("#thumbsDownButton");
+                this.$thumbsUpButton = $("#thumbsUpButton");
+                this.canvas = document.getElementById('canvas');
             }
 
-            const view = new View();
-            view.initialize();
+            reset() {
+                this.$homeView.hide();
+                this.$evaluatingView.hide();
+                this.$resultView.hide();
+                this.$successView.hide();
+                this.$failureView.hide();
+                this.$doneButtons.hide();
 
-            let currentImage = null;
-            let currentScaledDownImageData = null;
-            let currentUploadId = null;
+                // clear canvas
+                this.canvas.getContext('2d').clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // clear file input
+                $("#imageSelectInput").val('');
+            }
+
+            initialize() {
+                this.reset();
+                this.home();
+
+                // trick to propagate the click to the file input
+                this.$homeView.on("click", function (e) {
+                    $('#imageSelectInput').focus().trigger('click');
+                    e.preventDefault();
+                    return false;
+                });
+
+                const $self = $(self);
+
+                this.$imageSelectInput.change(function () {
+                    const file = this.files[0];
+                    console.log("image selected", file);
+                    $self.trigger("imageSelected", [file]);
+                });
+
+                this.$retryButton.click(function () {
+                    $(self).trigger("retry");
+                });
+
+                this.$thumbsDownButton.click(function () {
+                    $(self).trigger("thumbsDown");
+                });
+                this.$thumbsUpButton.click(function () {
+                    $(self).trigger("thumbsUp");
+                });
+            }
+
+            on(eventType, handler) {
+                $(self).on(eventType, handler);
+            }
+
+            home() {
+                this.$homeView.show();
+                changeAddressBarColor('darkred');
+            }
+
+            evaluating() {
+                this.$homeView.hide();
+                this.$resultView.show();
+                this.$evaluatingView.show();
+                changeAddressBarColor('#0366ad');
+            }
+
+            error(message) {
+                this.reset();
+                this.home();
+                $("#errorModal .modal-body").text(message);
+                this.errorModal.show();
+            }
+
+            predictionFail() {
+                this.$evaluatingView.hide();
+                this.$failureView.show();
+                this.$doneButtons.show();
+                changeAddressBarColor('darkred');
+            }
+
+            predictionSuccess() {
+                this.$evaluatingView.hide();
+                this.$successView.show();
+                this.$doneButtons.show();
+                changeAddressBarColor('#00B400');
+            }
+
+            drawImage(image) {
+                let $canvas = $(this.canvas);
+
+                // Set canvas size to its visual size to avoid scaling
+                this.canvas.width = $canvas.width();
+                this.canvas.height = $canvas.height();
+
+                const ctx = this.canvas.getContext('2d');
+
+                // clear canvas
+                ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // TODO: need to do auto rotation based on image orientation
+                let hRatio = this.canvas.width / image.naturalWidth;
+                let vRatio = this.canvas.height / image.naturalHeight;
+
+                let imageRatio = Math.min(hRatio, vRatio);
+                ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, image.width * imageRatio, image.height * imageRatio);
+            }
+
+            drawBoundingBox(image, x0, x1, y0, y1) {
+                let hRatio = this.canvas.width / image.naturalWidth;
+                let vRatio = this.canvas.height / image.naturalHeight;
+
+                let imageRatio = Math.min(hRatio, vRatio);
+
+                let abs_x0 = x0 * image.width * imageRatio;
+                let abs_x1 = x1 * image.width * imageRatio;
+                let abs_y0 = y0 * image.height * imageRatio;
+                let abs_y1 = y1 * image.height * imageRatio;
+
+                const ctx = this.canvas.getContext('2d');
+                ctx.beginPath();
+                ctx.lineWidth = "6";
+                ctx.strokeStyle = "green";
+                ctx.rect(abs_x0, abs_y0, abs_x1 - abs_x0, abs_y1 - abs_y0);
+                ctx.stroke();
+            }
+        }
+
+        class State {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.currentImage = null;
+                this.currentScaledDownImageData = null;
+                this.currentUploadId = null;
+            }
+
+        }
+
+        $(document).ready(() => {
+            const view = new View();
+            const state = new State();
+
+            view.initialize();
 
             let socket = io(REPLY_SERVICE_URL, {
                 transports: ["websocket"],
@@ -526,11 +562,12 @@
                     type: "POST",
                     data: JSON.stringify({
                         // something like /9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYG
-                        "image_b64": currentScaledDownImageData.split(",")[1],
+                        "image_b64": state.currentScaledDownImageData.split(",")[1],
                     }),
                     contentType: "application/json; charset=utf-8",
                     dataType: "json",
                     timeout: 30000, // 30 seconds
+                    //
                     success: function (data) {
                         console.log("Upload service result:", data);
                         if (!data || !data.uploadId) {
@@ -538,11 +575,12 @@
                             return;
                         }
 
-                        currentUploadId = data.uploadId;
+                        state.currentUploadId = data.uploadId;
 
-                        console.log("Requesting prediction from reply service...", {uploadId: currentUploadId});
-                        socket.emit('request_prediction_reply', {uploadId: currentUploadId});
+                        console.log("Requesting prediction from reply service...", {uploadId: state.currentUploadId});
+                        socket.emit('request_prediction_reply', {uploadId: state.currentUploadId});
                     },
+                    //
                     error: function (xhr) {
                         console.log("Error:", xhr.status, "-", xhr.responseText);
                         view.error(xhr.responseText);
@@ -556,7 +594,7 @@
                     view.error("Invalid response from reply service");
                     return;
                 }
-                if (msg.uploadId !== currentUploadId) {
+                if (msg.uploadId !== state.currentUploadId) {
                     console.log("Ignoring reply from reply service, uploadId mismatch");
                     return;
                 }
@@ -566,37 +604,37 @@
                     view.predictionFail();
                 } else {
                     view.predictionSuccess();
-                    drawBoxOnImage(currentImage, msg.x0, msg.x1, msg.y0, msg.y1);
+                    view.drawBoundingBox(state.currentImage, msg.x0, msg.x1, msg.y0, msg.y1);
                 }
             });
 
-            $("#imageSelectInput").change(function () {
+            view.on('imageSelected', function (event, file) {
                 view.evaluating();
 
-                const file = this.files[0];
                 if (file) {
                     const img = new Image();
                     img.onload = function () {
-                        currentImage = img;
-                        drawImage(currentImage);
-                        currentScaledDownImageData = createScaledDownImage(currentImage);
-                        // debugImage(currentScaledDownImageData);
+                        state.currentImage = img;
+                        view.drawImage(state.currentImage);
+                        state.currentScaledDownImageData = createScaledDownImage(state.currentImage);
+                        // debugImage(state.currentScaledDownImageData);
                         callUpload();
                     };
                     img.src = URL.createObjectURL(file);
                 }
             });
 
-            $("#retryButton").click(function () {
+            view.on('retry', function () {
                 view.reset();
                 view.home();
+                state.reset();
             });
 
-            $("#thumbsDownButton").click(function () {
+            view.on('thumbsDown', function () {
                 // TODO: fire and forget feedback
             });
 
-            $("#thumbsUpButton").click(function () {
+            view.on('thumbsUp', function () {
                 // TODO: fire and forget feedback
             });
 
