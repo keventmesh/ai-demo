@@ -35,7 +35,7 @@ def receive_feedback():
     # request body looks like this:
     # {
     #  "uploadId": "123",
-    #  "feedback": "5"
+    #  "feedback": 5
     # }
 
     print(f"Received request")
@@ -54,7 +54,7 @@ def receive_feedback():
 
     ce_data = {
         "uploadId": body['uploadId'],
-        "feedback": body['feedback'],
+        "feedback": int(body['feedback']),
     }
 
     ce_attributes = {

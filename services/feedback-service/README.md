@@ -37,7 +37,7 @@ You should see this body:
 ```json
 {
   "uploadId": "deadbeef",
-  "feedback": "5"
+  "feedback": 5
 }
 ```
 and these headers:
