@@ -4,7 +4,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="darkred" />
+    <meta name="theme-color" content="darkred"/>
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Knative AI Demo</title>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
@@ -150,7 +150,7 @@
             }
         }
 
-        #success {
+        #successView {
             position: absolute;
             top: 0;
             text-align: center;
@@ -164,7 +164,7 @@
             padding-bottom: 0.7rem;
         }
 
-        #success .checkmark {
+        #successView .checkmark {
             position: absolute;
             top: 1.8rem;
             padding-left: calc(50% - 2.5rem);
@@ -172,11 +172,11 @@
             color: rgb(0, 180, 0);
         }
 
-        #success .checkmark svg {
+        #successView .checkmark svg {
             width: 5rem;
         }
 
-        #failure {
+        #failureView {
             position: absolute;
             top: 0;
             text-align: center;
@@ -190,7 +190,7 @@
             padding-bottom: 0.7rem;
         }
 
-        #failure .cross {
+        #failureView .cross {
             position: absolute;
             top: 1.8rem;
             padding-left: calc(50% - 2.5rem);
@@ -198,7 +198,7 @@
             color: darkred;
         }
 
-        #failure .cross svg {
+        #failureView .cross svg {
             width: 5rem;
         }
     </style>
@@ -243,7 +243,7 @@
         </div>
     </div>
 
-    <div id="success" style="display: none;">
+    <div id="successView" style="display: none;">
         <div class="checkmark">
             <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="currentColor"
                  class="bi bi-check-circle" viewBox="0 0 16 16">
@@ -255,7 +255,7 @@
         Knative
     </div>
 
-    <div id="failure" style="display: none;">
+    <div id="failureView" style="display: none;">
         <div class="cross">
             <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="currentColor"
                  class="bi bi-x-circle" viewBox="0 0 16 16">
@@ -396,7 +396,18 @@
             ctx.stroke();
         }
 
+        function changeAddressBarColor(color) {
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', color);
+        }
+
         $(document).ready(() => {
+            const $homeView = $("#homeView");
+            const $evaluatingView = $("#evaluatingView");
+            const $resultView = $("#resultView");
+            const $successView = $("#successView");
+            const $failureView = $("#failureView");
+
+
             let currentImage = null;
             let currentScaledDownImageData = null;
             let currentUploadId = null;
@@ -413,15 +424,14 @@
                 console.log("Disconnected from reply service!");
             });
 
-            $("#homeView").on("click", function (e) {
-                console.log("Opening file selection");
+            $homeView.on("click", function (e) {
                 $('#imageSelectInput').focus().trigger('click');
                 e.preventDefault();
                 return false;
             });
 
+
             function callUpload() {
-                // TODO: we need a time out here
                 $.ajax({
                     url: UPLOAD_SERVICE_URL,
                     type: "POST",
@@ -431,10 +441,11 @@
                     }),
                     contentType: "application/json; charset=utf-8",
                     dataType: "json",
+                    timeout: 30000, // 30 seconds
                     success: function (data) {
                         console.log("Upload service result:", data);
                         if (!data || !data.uploadId) {
-                            $("#evaluatingView").hide();
+                            $evaluatingView.hide();
                             showErrorMessage("Invalid response from upload service");
                             return;
                         }
@@ -444,8 +455,8 @@
                         console.log("Requesting prediction from reply service...", {uploadId: currentUploadId});
                         socket.emit('request_prediction_reply', {uploadId: currentUploadId});
                     },
-                    error: function (xhr, ajaxOptions, thrownError) {
-                        $("#evaluatingView").hide();
+                    error: function (xhr) {
+                        $evaluatingView.hide();
                         console.log("Error:", xhr.status, "-", xhr.responseText);
                         showErrorMessage(xhr.responseText);
                     }
@@ -455,7 +466,7 @@
             socket.on('reply', function (msg) {
                 console.log("Received reply from reply service:", msg);
                 if (!msg || !msg.uploadId) {
-                    $("#evaluatingView").hide();
+                    $evaluatingView.hide();
                     showErrorMessage("Invalid response from reply service");
                     return;
                 }
@@ -464,33 +475,33 @@
                     return;
                 }
 
-                $("#evaluatingView").hide();
+                $evaluatingView.hide();
 
                 // TODO: do we want this filtering here, or in the reply service?
                 if (msg['probability'] < 0.5) {
-                    $("#failure").show();
-                    document.querySelector('meta[name="theme-color"]').setAttribute('content',  'darkred');
+                    $failureView.show();
+                    changeAddressBarColor('darkred');
                 } else {
-                    $("#success").show();
-                    document.querySelector('meta[name="theme-color"]').setAttribute('content',  '#00B400');
+                    $successView.show();
+                    changeAddressBarColor('#00B400');
                     drawBoxOnImage(currentImage, msg.x0, msg.x1, msg.y0, msg.y1);
                 }
             });
 
             $("#imageSelectInput").change(function () {
-                $("#evaluatingView").show();
-                document.querySelector('meta[name="theme-color"]').setAttribute('content',  '#0366ad');
+                $evaluatingView.show();
+                changeAddressBarColor('#0366ad');
 
                 const file = this.files[0];
                 if (file) {
                     const img = new Image();
                     img.onload = function () {
                         currentImage = img;
-                        $("#homeView").hide();
-                        $("#resultView").show();
+                        $homeView.hide();
+                        $resultView.show();
                         drawImage(currentImage);
                         currentScaledDownImageData = createScaledDownImage(currentImage);
-                        debugImage(currentScaledDownImageData);
+                        // debugImage(currentScaledDownImageData);
                         callUpload();
                     };
                     img.src = URL.createObjectURL(file);
