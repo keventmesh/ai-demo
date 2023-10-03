@@ -25,4 +25,5 @@ resources:
   - prediction-service/trigger.yaml
   - inference-service/service.yaml
   - analytics-service
+  - feedback-service/ksvc.yaml
 
