@@ -1,0 +1,35 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: feedback-service
+  namespace: ai-demo
+  labels:
+    app: feedback-service
+spec:
+  template:
+    spec:
+      containers:
+        - image: quay.io/kevent-mesh/ai-demo-feedback-service:main
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SOURCE_DECLARATION
+              value: "feedback-service"
+---
+apiVersion: sources.knative.dev/v1
+kind: SinkBinding
+metadata:
+  name: feedback-service
+  namespace: ai-demo
+spec:
+  subject:
+    apiVersion: serving.knative.dev/v1
+    kind: Service
+    selector:
+      matchLabels:
+        app: feedback-service
+  sink:
+    ref:
+      apiVersion: eventing.knative.dev/v1
+      kind: Broker
+      name: analytics-broker

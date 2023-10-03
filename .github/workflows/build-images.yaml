@@ -128,3 +128,18 @@ jobs:
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Print ai-demo-prediction-service image url
         run: echo "ai-demo-prediction-service image pushed to ${{ steps.push-ai-demo-prediction-service.outputs.registry-paths }}"
+
+      - name: Build ai-demo-feedback-service
+        id: build-ai-demo-feedback-service
+        run: docker build services/feedback-service --file services/feedback-service/Dockerfile -t ai-demo-feedback-service:main
+      - name: Push ai-demo-feedback-service
+        id: push-ai-demo-feedback-service
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ai-demo-feedback-service
+          tags: main
+          registry: quay.io/kevent-mesh
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Print ai-demo-feedback-service image url
+        run: echo "ai-demo-feedback-service image pushed to ${{ steps.push-ai-demo-feedback-service.outputs.registry-paths }}"
