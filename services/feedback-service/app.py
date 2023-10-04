@@ -71,8 +71,12 @@ def receive_feedback():
     headers, body = to_binary(event)
 
     try:
-        print(f"Sending event with payload {str(ce_data)} to {K_SINK}")
-        requests.post(K_SINK, data=body, headers=headers)
+        print(f"Sending event with payload {str(ce_data)} and headers {str(headers)} to {K_SINK}")
+        response = requests.post(K_SINK, data=body, headers=headers)
+        print(f"Received response with status code: {response.status_code}")
+        if response.status_code >= 300:
+            print(f"Failed to send event to {K_SINK} with status code: {response.status_code}")
+            return f"Failed to send event to {K_SINK}", 500
     except Exception as e:
         print(f"Failed to send event to {K_SINK} with error: {e}")
         return f"Failed to send event to {K_SINK}", 500

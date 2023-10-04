@@ -140,7 +140,10 @@ def prediction_request():
     payload = {'instances': [image_np.tolist()]}
 
     try:
-        call = requests.post(URL, json=payload)
+        response = requests.post(URL, json=payload)
+        if response.status_code >= 300:
+            print(f"Failed to call inference service for uploadId {upload_id} with status code: {response.status_code}")
+            return f"Failed to call inference service", 500
     except Exception as e:
         print(f"Failed to call inference service for uploadId {upload_id}")
         print(e)
@@ -149,7 +152,7 @@ def prediction_request():
     call_end_time = time.time()
     print('Inference call took {} seconds'.format(call_end_time - call_start_time))
 
-    inference = call.json()
+    inference = response.json()
 
     if "predictions" not in inference:
         print(f"Failed to get predictions from inference service for uploadId {upload_id}")
