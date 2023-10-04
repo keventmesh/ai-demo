@@ -43,7 +43,15 @@ python app.py
 
 Test sending feedbacks:
 ```shell
-curl -v -X POST -H "Content-Type: application/json" localhost:8086/feedbacks -d '{"uploadId": "xyz", "feedback": 1}'
+curl -v "localhost:8086/feedbacks" \
+  -X POST \
+  -H "Ce-Specversion: 1.0" \
+  -H "Ce-Type: does.not.matter" \
+  -H "Content-Type: application/json" \
+  -H "Ce-Source: knative://foo.bar" \
+  -H "Ce-time: 2020-12-02T13:49:13.77Z" \
+  -H "Ce-Id: 536808d3-88be-4077-9d7a-a3f162705f79" \
+  -d '{"uploadId": "xyz", "feedback": 1}'
 ```
 
 Check the DB:
@@ -58,7 +66,15 @@ docker exec -ti postgres psql postgresql://postgres:postgres@localhost:5432/ai-d
 
 Test sending predictions:
 ```shell
-curl -v -X POST -H "Content-Type: application/json" localhost:8086/predictions -d '{"uploadId": "xyz", "probability": 0.999, "x0": 0.24543, "x1": 0.24543, "y0": 0.24543, "y1": 0.24543}'
+curl -v "localhost:8086/predictions" \
+  -X POST \
+  -H "Ce-Specversion: 1.0" \
+  -H "Ce-Type: does.not.matter" \
+  -H "Content-Type: application/json" \
+  -H "Ce-Source: knative://foo.bar" \
+  -H "Ce-time: 2020-12-02T13:49:13.77Z" \
+  -H "Ce-Id: 536808d3-88be-4077-9d7a-a3f162705f79" \
+  -d '{"uploadId": "xyz", "probability": 0.999, "x0": 0.24543, "x1": 0.24543, "y0": 0.24543, "y1": 0.24543}'
 ```
 
 Check the DB:
@@ -84,19 +100,17 @@ Build the image:
 docker build . -t ${DOCKER_REPO_OVERRIDE}/analytics-service
 ```
 
-
-# Sending feedbacks
-
+Run the image:
 ```shell
-analytics_service_url=$(k get ksvc -n ai-demo analytics-service -o=jsonpath='{.status.url}')
-curl -v -X POST -H "Content-Type: application/json" ${analytics_service_url}/feedbacks -d '{"uploadId": "xyz", "feedback": 1}'
+docker run --rm \
+-p 8086:8086 \
+-e DB_HOST="192.168.2.160" \
+-e DB_PORT="5432" \
+-e DB_DATABASE="ai-demo" \
+-e DB_USERNAME="postgres" \
+-e DB_PASSWORD="postgres" \
+-e MAX_ITEMS_IN_CACHES="1000000" \
+-e CACHE_ITEM_TTL_IN_SECONDS="300" \
+${DOCKER_REPO_OVERRIDE}/analytics-service
 ```
-
-# Sending predictions
-
-```shell
-analytics_service_url=$(k get ksvc -n ai-demo analytics-service -o=jsonpath='{.status.url}')
-curl -v -X POST -H "Content-Type: application/json" ${analytics_service_url}/predictions -d '{"uploadId": "xyz", "probability": 0.999, "x0": 0.24543, "x1": 0.24543, "y0": 0.24543, "y1": 0.24543}'
-```
-
 

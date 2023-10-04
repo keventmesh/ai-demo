@@ -4,6 +4,7 @@ import sys
 
 import psycopg2
 from flask import Flask, request
+from cloudevents.http import from_http
 
 
 def init_feedbacks_table():
@@ -56,27 +57,30 @@ app = Flask(__name__)
 
 @app.route("/feedbacks", methods=["POST"])
 def receive_feedbacks():
+    print(f"Received request")
+
     # request body looks like this:
     # {
     #   "feedback": <int>
     #   "uploadId": <string>
     # }
 
-    print(f"Received request: {request.json}")
+    event = from_http(request.headers, request.get_data())
 
-    body = request.json
+    data = event.data
 
     required_fields = ['feedback', 'uploadId']
     for x in required_fields:
-        if x not in body:
+        if x not in data:
             return f"'{x}' not in request", 400
 
     cur = conn.cursor()
 
+    print(f"Inserting feedback {data['feedback']} for upload {data['uploadId']}")
     cur.execute('INSERT INTO feedbacks (feedback, upload_id) '
                 'VALUES (%s, %s) '
                 'ON CONFLICT (upload_id) DO NOTHING',
-                (body['feedback'], body['uploadId']))
+                (data['feedback'], data['uploadId']))
 
     conn.commit()
     cur.close()
@@ -96,22 +100,25 @@ def receive_predictions():
     #     "y1": "0.556647"
     # }
 
-    print(f"Received request: {request.json}")
+    print(f"Received request")
 
-    body = request.json
+    event = from_http(request.headers, request.get_data())
+
+    data = event.data
 
     required_fields = ['probability', 'uploadId', 'x0', 'x1', 'y0', 'y1']
     for x in required_fields:
-        if x not in body:
+        if x not in data:
             return f"'{x}' not in request", 400
 
     cur = conn.cursor()
 
+    print(f"Inserting prediction {data['probability']} for upload {data['uploadId']}")
     cur.execute(
         'INSERT INTO predictions (probability, upload_id, x0, x1, y0, y1) '
         'VALUES (%s, %s, %s, %s, %s, %s) '
         'ON CONFLICT (upload_id) DO NOTHING',
-        (body['probability'], body['uploadId'], body['x0'], body['x1'], body['y0'], body['y1']))
+        (data['probability'], data['uploadId'], data['x0'], data['x1'], data['y0'], data['y1']))
 
     conn.commit()
     cur.close()
