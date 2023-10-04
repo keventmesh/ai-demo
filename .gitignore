@@ -9,3 +9,6 @@ training/TensorFlow/workspace/training_01/models
 training/TensorFlow/workspace/training_01/exported-models/my_model
 
 kserve_test/models
+
+# sensitive data
+.build.secrets

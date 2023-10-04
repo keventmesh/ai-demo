@@ -4,12 +4,19 @@ on:
   push:
     branches: [ "main" ]
 
+env:
+  DOCKER_REPO_OVERRIDE: quay.io/kevent-mesh
+  AI_DEMO_IMAGE_TAG: main
+
 jobs:
   build:
     name: build images
     runs-on: ubuntu-latest
 
     steps:
+      - name: Print env
+        run: echo "Going to push to container registry ${{ env.DOCKER_REPO_OVERRIDE }} with image tags ${{ env.AI_DEMO_IMAGE_TAG }}"
+
       - uses: actions/checkout@v3
 
       - uses: actions/setup-python@v4
@@ -20,20 +27,26 @@ jobs:
         run: |
           pip install --no-input gsutil
 
+      # necessary for Running Red Hat Quay GitHub Action locally
+      - name: Install podman
+        if: ${{ !github.event.act }} # only run when local actions testing
+        run: |
+          apt-get update && apt-get -y install podman
+
       - name: Download model files
         run: |
           gsutil cp -r gs://knative-ai-demo/kserve-models/knative_01/0001 ./services/inference-service/v1/model
           ls -la ./services/inference-service/v1/model
       - name: Build ai-demo-inference-service
         id: build-ai-demo-inference-service
-        run: docker build services/inference-service/v1 --file services/inference-service/v1/Dockerfile -t ai-demo-inference-service-v1:main
+        run: docker build services/inference-service/v1 --file services/inference-service/v1/Dockerfile -t ai-demo-inference-service-v1${{ env.AI_DEMO_IMAGE_TAG }}
       - name: Push ai-demo-inference-service
         id: push-ai-demo-inference-service
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ai-demo-inference-service-v1
-          tags: main
-          registry: quay.io/kevent-mesh
+          tags: ${{ env.AI_DEMO_IMAGE_TAG }}
+          registry: ${{ env.DOCKER_REPO_OVERRIDE }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Print ai-demo-inference-service image url
@@ -41,14 +54,14 @@ jobs:
 
       - name: Build ai-demo-upload-service
         id: build-ai-demo-upload-service
-        run: docker build services/upload-service --file services/upload-service/Dockerfile -t ai-demo-upload-service:main
+        run: docker build services/upload-service --file services/upload-service/Dockerfile -t ai-demo-upload-service:${{ env.AI_DEMO_IMAGE_TAG }}
       - name: Push ai-demo-upload-service
         id: push-ai-demo-upload-service
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ai-demo-upload-service
-          tags: main
-          registry: quay.io/kevent-mesh
+          tags: ${{ env.AI_DEMO_IMAGE_TAG }}
+          registry: ${{ env.DOCKER_REPO_OVERRIDE }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Print ai-demo-upload-service image url
@@ -56,14 +69,14 @@ jobs:
 
       - name: Build ai-demo-minio-webhook-source
         id: build-ai-demo-minio-webhook-source
-        run: docker build services/minio-webhook-source --file services/minio-webhook-source/Dockerfile -t ai-demo-minio-webhook-source:main
+        run: docker build services/minio-webhook-source --file services/minio-webhook-source/Dockerfile -t ai-demo-minio-webhook-source:${{ env.AI_DEMO_IMAGE_TAG }}
       - name: Push ai-demo-minio-webhook-source
         id: push-ai-demo-minio-webhook-source
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ai-demo-minio-webhook-source
-          tags: main
-          registry: quay.io/kevent-mesh
+          tags: ${{ env.AI_DEMO_IMAGE_TAG }}
+          registry: ${{ env.DOCKER_REPO_OVERRIDE }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Print ai-demo-minio-webhook-source image url
@@ -71,14 +84,14 @@ jobs:
 
       - name: Build ai-demo-ui-service
         id: build-ai-demo-ui-service
-        run: docker build services/ui-service --file services/ui-service/Dockerfile -t ai-demo-ui-service:main
+        run: docker build services/ui-service --file services/ui-service/Dockerfile -t ai-demo-ui-service:${{ env.AI_DEMO_IMAGE_TAG }}
       - name: Push ai-demo-ui-service
         id: push-ai-demo-ui-service
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ai-demo-ui-service
-          tags: main
-          registry: quay.io/kevent-mesh
+          tags: ${{ env.AI_DEMO_IMAGE_TAG }}
+          registry: ${{ env.DOCKER_REPO_OVERRIDE }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Print ai-demo-ui-service image url
@@ -86,14 +99,14 @@ jobs:
 
       - name: Build ai-demo-reply-service
         id: build-ai-demo-reply-service
-        run: docker build services/reply-service --file services/reply-service/Dockerfile -t ai-demo-reply-service:main
+        run: docker build services/reply-service --file services/reply-service/Dockerfile -t ai-demo-reply-service:${{ env.AI_DEMO_IMAGE_TAG }}
       - name: Push ai-demo-reply-service
         id: push-ai-demo-reply-service
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ai-demo-reply-service
-          tags: main
-          registry: quay.io/kevent-mesh
+          tags: ${{ env.AI_DEMO_IMAGE_TAG }}
+          registry: ${{ env.DOCKER_REPO_OVERRIDE }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Print ai-demo-reply-service image url
@@ -101,14 +114,14 @@ jobs:
 
       - name: Build ai-demo-analytics-service
         id: build-ai-demo-analytics-service
-        run: docker build services/analytics-service --file services/analytics-service/Dockerfile -t ai-demo-analytics-service:main
+        run: docker build services/analytics-service --file services/analytics-service/Dockerfile -t ai-demo-analytics-service:${{ env.AI_DEMO_IMAGE_TAG }}
       - name: Push ai-demo-analytics-service
         id: push-ai-demo-analytics-service
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ai-demo-analytics-service
-          tags: main
-          registry: quay.io/kevent-mesh
+          tags: ${{ env.AI_DEMO_IMAGE_TAG }}
+          registry: ${{ env.DOCKER_REPO_OVERRIDE }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Print ai-demo-analytics-service image url
@@ -116,14 +129,14 @@ jobs:
 
       - name: Build ai-demo-prediction-service
         id: build-ai-demo-prediction-service
-        run: docker build services/prediction-service --file services/prediction-service/Dockerfile -t ai-demo-prediction-service:main
+        run: docker build services/prediction-service --file services/prediction-service/Dockerfile -t ai-demo-prediction-service:${{ env.AI_DEMO_IMAGE_TAG }}
       - name: Push ai-demo-prediction-service
         id: push-ai-demo-prediction-service
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ai-demo-prediction-service
-          tags: main
-          registry: quay.io/kevent-mesh
+          tags: ${{ env.AI_DEMO_IMAGE_TAG }}
+          registry: ${{ env.DOCKER_REPO_OVERRIDE }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Print ai-demo-prediction-service image url
@@ -131,14 +144,14 @@ jobs:
 
       - name: Build ai-demo-feedback-service
         id: build-ai-demo-feedback-service
-        run: docker build services/feedback-service --file services/feedback-service/Dockerfile -t ai-demo-feedback-service:main
+        run: docker build services/feedback-service --file services/feedback-service/Dockerfile -t ai-demo-feedback-service:${{ env.AI_DEMO_IMAGE_TAG }}
       - name: Push ai-demo-feedback-service
         id: push-ai-demo-feedback-service
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ai-demo-feedback-service
-          tags: main
-          registry: quay.io/kevent-mesh
+          tags: ${{ env.AI_DEMO_IMAGE_TAG }}
+          registry: ${{ env.DOCKER_REPO_OVERRIDE }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Print ai-demo-feedback-service image url
@@ -146,14 +159,14 @@ jobs:
 
       - name: Build ai-demo-admin-service
         id: build-ai-demo-admin-service
-        run: docker build services/admin-service --file services/admin-service/Dockerfile -t ai-demo-admin-service:main
+        run: docker build services/admin-service --file services/admin-service/Dockerfile -t ai-demo-admin-service:${{ env.AI_DEMO_IMAGE_TAG }}
       - name: Push ai-demo-admin-service
         id: push-ai-demo-admin-service
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ai-demo-admin-service
-          tags: main
-          registry: quay.io/kevent-mesh
+          tags: ${{ env.AI_DEMO_IMAGE_TAG }}
+          registry: ${{ env.DOCKER_REPO_OVERRIDE }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Print ai-demo-admin-service image url
