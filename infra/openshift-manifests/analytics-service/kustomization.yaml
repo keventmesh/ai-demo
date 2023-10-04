@@ -9,3 +9,4 @@ resources:
   - analytics-broker.yaml
   - analytics-service.yaml
   - predictions-trigger.yaml
+  - feedbacks-trigger.yaml
