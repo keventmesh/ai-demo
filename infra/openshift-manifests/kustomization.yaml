@@ -28,3 +28,31 @@ resources:
   - feedback-service/ksvc.yaml
   - admin-service/ksvc.yaml
 
+images:
+- name: quay.io/kevent-mesh/ai-demo-inference-service-v1
+  newName: "${DOCKER_REPO_OVERRIDE}/ai-demo-inference-service-v1"
+  newTag: "${AI_DEMO_IMAGE_TAG}"
+- name: quay.io/kevent-mesh/ai-demo-upload-service
+  newName: "${DOCKER_REPO_OVERRIDE}/ai-demo-upload-service"
+  newTag: "${AI_DEMO_IMAGE_TAG}"
+- name: quay.io/kevent-mesh/ai-demo-minio-webhook-source
+  newName: "${DOCKER_REPO_OVERRIDE}/ai-demo-minio-webhook-source"
+  newTag: "${AI_DEMO_IMAGE_TAG}"
+- name: quay.io/kevent-mesh/ai-demo-ui-service
+  newName: "${DOCKER_REPO_OVERRIDE}/ai-demo-ui-service"
+  newTag: "${AI_DEMO_IMAGE_TAG}"
+- name: quay.io/kevent-mesh/ai-demo-reply-service
+  newName: "${DOCKER_REPO_OVERRIDE}/ai-demo-reply-service"
+  newTag: "${AI_DEMO_IMAGE_TAG}"
+- name: quay.io/kevent-mesh/ai-demo-analytics-service
+  newName: "${DOCKER_REPO_OVERRIDE}/ai-demo-analytics-service"
+  newTag: "${AI_DEMO_IMAGE_TAG}"
+- name: quay.io/kevent-mesh/ai-demo-prediction-service
+  newName: "${DOCKER_REPO_OVERRIDE}/ai-demo-prediction-service"
+  newTag: "${AI_DEMO_IMAGE_TAG}"
+- name: quay.io/kevent-mesh/ai-demo-feedback-service
+  newName: "${DOCKER_REPO_OVERRIDE}/ai-demo-feedback-service"
+  newTag: "${AI_DEMO_IMAGE_TAG}"
+- name: quay.io/kevent-mesh/ai-demo-admin-service
+  newName: "${DOCKER_REPO_OVERRIDE}/ai-demo-admin-service"
+  newTag: "${AI_DEMO_IMAGE_TAG}"

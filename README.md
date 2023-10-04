@@ -34,3 +34,19 @@ TODO:
 TODO:
 - Use Gunicorn for production (containers) (https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers)
 - 
+
+## Building images
+
+```shell
+
+```
+
+## Deploying
+
+```shell
+export DOCKER_REPO_OVERRIDE="docker.io/aliok"
+export AI_DEMO_IMAGE_TAG="my-tag"
+
+./infra/openshift-manifests/install.sh
+```
+

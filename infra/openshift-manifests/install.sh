@@ -5,7 +5,10 @@ manifests_dir="${current_dir}/../kind-manifests"
 
 source "${current_dir}/lib.sh"
 
-while ! kubectl apply -k ${current_dir}
+export DOCKER_REPO_OVERRIDE="${DOCKER_REPO_OVERRIDE:-"quay.io/kevent-mesh"}"
+export AI_DEMO_IMAGE_TAG="${AI_DEMO_IMAGE_TAG:-latest}"
+
+while ! kustomize build "${current_dir}" | envsubst | kubectl apply -f -;
 do
   echo "waiting for resource apply to succeed"
   sleep 10
