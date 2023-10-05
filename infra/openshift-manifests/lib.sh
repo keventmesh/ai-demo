@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 function create_minio_client_config(){
     MINIO_ENDPOINT=$(oc get route -n minio-operator minio-endpoint -o jsonpath="{.status.ingress[0].host}")
 
@@ -98,4 +100,8 @@ function patch_ui_service_configmap(){
 
 install_postgresql() {
   oc process -n openshift postgresql-persistent -p POSTGRESQL_DATABASE=ai-demo -p VOLUME_CAPACITY=2Gi -p POSTGRESQL_USER=ai-demo -p POSTGRESQL_PASSWORD=ai-demo | oc apply -n ai-demo -f - || return $?
+}
+
+install_grafana_dashboard() {
+  kubectl create configmap grafana-admin-dashboard -n grafana --from-file="${script_dir}/analytics-service/grafana-admin-dashboard.json" --dry-run=client -oyaml | kubectl apply -f -
 }

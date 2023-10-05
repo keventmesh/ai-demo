@@ -14,6 +14,8 @@ do
   sleep 10
 done
 
+install_grafana_dashboard
+
 patch_knative_serving
 
 create_minio_endpoint_route && create_minio_client_config && create_bucket && add_minio_webhook
