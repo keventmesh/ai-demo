@@ -10,3 +10,4 @@ resources:
   - analytics-service.yaml
   - predictions-trigger.yaml
   - feedbacks-trigger.yaml
+  - grafana-admin-dashboard.yaml

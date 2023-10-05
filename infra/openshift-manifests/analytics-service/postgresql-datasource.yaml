@@ -10,7 +10,7 @@ spec:
   datasource:
     name: postgresql
     type: postgres
-    database: postgres
+    database: ai-demo
     editable: false
     jsonData:
       connMaxLifetime: 14400
