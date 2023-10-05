@@ -195,7 +195,7 @@ def prediction_request():
     print(f"Returning prediction result for upload ID {upload_id}: {ce_data}")
 
     ce_attributes = {
-        "type": "com.knative.dev.prediction.event",
+        "type": "eventmesh.ai-demo.prediction",
         "source": SOURCE_DECLARATION,
     }
     event = CloudEvent(ce_attributes, ce_data)

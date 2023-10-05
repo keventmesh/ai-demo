@@ -122,7 +122,7 @@ def receive_event():
     }
 
     ce_attributes = {
-        "type": "com.knative.dev.minio.event",
+        "type": "eventmesh.ai-demo.storage",
         "source": SOURCE_DECLARATION,
     }
     event = CloudEvent(ce_attributes, ce_data)

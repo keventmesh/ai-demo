@@ -7,7 +7,7 @@ spec:
   broker: predictions-broker
   filter:
     attributes:
-      type: com.knative.dev.prediction.event
+      type: eventmesh.ai-demo.prediction
   subscriber:
     ref:
       apiVersion: serving.knative.dev/v1
