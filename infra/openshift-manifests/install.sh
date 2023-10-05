@@ -6,7 +6,7 @@ manifests_dir="${current_dir}/../kind-manifests"
 source "${current_dir}/lib.sh"
 
 export DOCKER_REPO_OVERRIDE="${DOCKER_REPO_OVERRIDE:-"quay.io/kevent-mesh"}"
-export AI_DEMO_IMAGE_TAG="${AI_DEMO_IMAGE_TAG:-latest}"
+export AI_DEMO_IMAGE_TAG="${AI_DEMO_IMAGE_TAG:-main}"
 
 while ! kustomize build "${current_dir}" | envsubst | kubectl apply -f -;
 do

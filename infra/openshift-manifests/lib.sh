@@ -9,7 +9,7 @@ function create_minio_client_config(){
     # execute operations with /tmp/mc-config mounted to the container's /mc-config directory
     #
     # set alias for our minio instance
-    docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    alias set ai-demo "https://${MINIO_ENDPOINT}" minio minio1234
+    docker run --rm -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    alias set ai-demo "https://${MINIO_ENDPOINT}" minio minio1234
 }
 
 function delete_minio_client_config(){
@@ -39,7 +39,7 @@ EOF
 
 function create_bucket() {
     # create a bucket
-    docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    mb ai-demo/ai-demo --ignore-existing
+    docker run --rm -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    mb ai-demo/ai-demo --ignore-existing
 }
 
 function delete_minio_endpoint_route(){
@@ -54,13 +54,13 @@ function add_minio_webhook(){
     endpoint=$(oc get ksvc -n ai-demo minio-webhook-source -ojsonpath="{.status.address.url}")
 
     # set the webhook endpoint, which is our minio webhook source service
-    docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    admin config set ai-demo/ notify_webhook:minio-webhook-source endpoint="${endpoint}:80"
+    docker run --rm -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    admin config set ai-demo/ notify_webhook:minio-webhook-source endpoint="${endpoint}:80"
 
     # restart the minio service
-    docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    admin service restart ai-demo/
+    docker run --rm -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    admin service restart ai-demo/
 
     # Subscribe to PUT events
-    docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    event add ai-demo/ai-demo arn:minio:sqs::minio-webhook-source:webhook --event put --ignore-existing
+    docker run --rm -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    event add ai-demo/ai-demo arn:minio:sqs::minio-webhook-source:webhook --event put --ignore-existing
 }
 
 function patch_knative_serving(){
