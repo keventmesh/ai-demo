@@ -13,6 +13,12 @@ This image is published at `quay.io/kevent-mesh/ai-demo-admin-service`.
 - Have Minio working, with an upload in it
 - Have the Postgres working, with the prediction and feedbacks in it
 
+For port forwarding:
+```shell
+kubectl port-forward -n minio-operator svc/minio 9445:443
+kubectl port-forward -n ai-demo svc/postgresql 5432:5432
+```
+
 # Running locally
 
 Setup virtual environment:
