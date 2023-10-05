@@ -1,10 +1,10 @@
 # Prediction service
 
 This service:
-- Receives a `com.knative.dev.minio.event` event
+- Receives a `eventmesh.ai-demo.storage` event
 - Downloads the image from Minio
 - Sends the image to the KServe inference service
-- Replies with the prediction result as a `com.knative.dev.prediction.event` event
+- Replies with the prediction result as a `eventmesh.ai-demo.prediction` event
 
 This image is published at `quay.io/kevent-mesh/ai-demo-prediction-service`.
 
@@ -114,7 +114,7 @@ Test:
 # Send a sample event
 curl -i 'http://localhost:8083/'                      \
   -H 'ce-time: 2023-09-26T12:35:14.372688+00:00'      \
-  -H 'ce-type: com.knative.dev.minio.event'           \
+  -H 'ce-type: eventmesh.ai-demo.storage'           \
   -H 'ce-source: pod.ai-demo.minio-webhook-service'   \
   -H 'ce-id: a9254f41-4d32-45d2-8293-e90d96876de1'    \
   -H 'ce-specversion: 1.0'                            \
@@ -145,7 +145,7 @@ Content-Length: 125
 ce-specversion: 1.0
 ce-id: df0340be-6e7e-4136-8445-895b8de32a0b
 ce-source: prediction-service
-ce-type: com.knative.dev.prediction.event
+ce-type: eventmesh.ai-demo.prediction
 ce-time: 2023-09-27T12:11:02.451656+00:00
 Access-Control-Allow-Origin: *
 Connection: close

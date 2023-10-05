@@ -7,7 +7,7 @@ spec:
   broker: analytics-broker
   filter:
     attributes:
-      type: com.knative.dev.feedback.event
+      type: eventmesh.ai-demo.feedback
   subscriber:
     ref:
       apiVersion: serving.knative.dev/v1

@@ -52,7 +52,7 @@ and these headers:
 connection: close
 content-length: 180
 ce-time: 2023-09-26T11:29:10.252868+00:00
-ce-type: com.knative.dev.minio.event
+ce-type: eventmesh.ai-demo.storage
 ce-source: pod.my-namespace.my-pod
 ce-id: 2ea7f9e1-2ca7-4984-bfb5-d4c1064d12da
 ce-specversion: 1.0

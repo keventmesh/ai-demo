@@ -62,7 +62,7 @@ def receive_feedback():
     }
 
     ce_attributes = {
-        "type": "com.knative.dev.feedback.event",
+        "type": "eventmesh.ai-demo.feedback",
         "source": SOURCE_DECLARATION,
     }
     event = CloudEvent(ce_attributes, ce_data)
