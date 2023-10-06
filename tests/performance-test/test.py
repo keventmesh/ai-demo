@@ -75,47 +75,86 @@ class Client:
         image_path = image_data['image']
         feedback = image_data['feedback']
 
-        with root_span.subspan("client") as client_span:
+        try:
+            with root_span.subspan("client") as client_span:
+                with client_span.subspan("init_ws_connection") as init_ws_connection_span:
+                    async with ws_req_semaphore:
+                        with init_ws_connection_span.subspan("do_init_ws_connection"):
+                            ok, ws_conn = await init_reply_ws_connection(self.reply_service_url, self.fake)
+                            if not ok:
+                                logger.warning(f"Failed to init ws connection, stopping processing with client")
+                                return False, "init_ws_connection"
 
-            with client_span.subspan("init_ws_connection") as init_ws_connection_span:
-                async with ws_req_semaphore:
-                    with init_ws_connection_span.subspan("do_init_ws_connection"):
-                        ok, ws_conn = await init_reply_ws_connection(self.reply_service_url, self.fake)
-                        if not ok:
-                            logger.warning(f"Failed to init ws connection, stopping processing with client")
-                            return
+                with client_span.subspan("upload") as upload_span:
+                    async with http_req_semaphore:
+                        with upload_span.subspan("send_upload_request"):
+                            ok, upload_id = await upload(image_path, self.upload_service_url, self.fake)
+                            if not ok:
+                                logger.warning(f"Failed to upload {image_path}, stopping processing with client")
+                                return False, "upload"
 
-            with client_span.subspan("upload") as upload_span:
-                async with http_req_semaphore:
-                    with upload_span.subspan("send_upload_request"):
-                        ok, upload_id = await upload(image_path, self.upload_service_url, self.fake)
-                        if not ok:
-                            logger.warning(f"Failed to upload {image_path}, stopping processing with client")
-                            return
+                with client_span.subspan("reply") as reply_span:
+                    async with ws_req_semaphore:
+                        with reply_span.subspan("wait_for_reply"):
+                            ok, _ = await wait_for_reply(ws_conn, upload_id, self.fake)
+                            if not ok:
+                                logger.warning(
+                                    f"Failed to wait for reply for {upload_id}, stopping processing with client")
+                                return
+                            ok, _ = await disconnect_ws(ws_conn, self.fake)
+                            if not ok:
+                                logger.warning(
+                                    f"Failed to disconnect from reply servicefor {upload_id} , stopping processing with client")
+                                return False, "reply"
 
-            with client_span.subspan("reply") as reply_span:
-                async with ws_req_semaphore:
-                    with reply_span.subspan("wait_for_reply"):
-                        ok, _ = await wait_for_reply(ws_conn, upload_id, self.fake)
-                        if not ok:
-                            logger.warning(f"Failed to wait for reply for {upload_id}, stopping processing with client")
-                            return
-                        ok, _ = await disconnect_ws(ws_conn, self.fake)
-                        if not ok:
-                            logger.warning(
-                                f"Failed to disconnect from reply servicefor {upload_id} , stopping processing with client")
-                            return
-
-            with client_span.subspan("feedback") as feedback_span:
-                async with http_req_semaphore:
-                    with feedback_span.subspan("send_feedback_request"):
-                        ok, _ = await send_feedback(upload_id, feedback, self.feedback_service_url, self.fake)
-                        if not ok:
-                            logger.warning(f"Failed to send feedback for {upload_id}, stopping processing with client")
-                            return
+                with client_span.subspan("feedback") as feedback_span:
+                    async with http_req_semaphore:
+                        with feedback_span.subspan("send_feedback_request"):
+                            ok, _ = await send_feedback(upload_id, feedback, self.feedback_service_url, self.fake)
+                            if not ok:
+                                logger.warning(f"Failed to send feedback for {upload_id}, stopping processing with client")
+                                return False, "feedback"
+            return True, None
+        except Exception as e:
+            logger.warning(f"Exception in client: {e}")
+            logger.warning(e, exc_info=True)
+            return False, "client"
 
 
-async def report(tg, root_span):
+def report_span(root_span):
+    logger.info("---------Span summary for finished spans:---------")
+    span_summary = root_span.build_summary()
+    for span_name, durations in span_summary.items():
+        avg = sum(durations) / len(durations) if len(durations) > 0 else 0
+        logger.info(
+            f"\t{span_name:<80} ({len(durations):>5} executions) with average {avg:.4f} seconds")
+    print("------------------\n\n\n\n")
+
+
+def report_tasks(tasks):
+    output_for_finished = []  # List[(bool, str)]
+    for task in tasks:
+        if task.done():
+            output_for_finished.append(task.result())
+
+    number_of_failures = [x for x in output_for_finished if not x[0]]
+    failure_reasons = {}
+    for ok, reason in number_of_failures:
+        if ok:
+            continue
+        if reason not in failure_reasons:
+            failure_reasons[reason] = 0
+        failure_reasons[reason] += 1
+
+    logger.info("---------Task summary of tasks so far:---------")
+    logger.info(
+        f"Done: {len(output_for_finished)}, In progress: {len(tasks) - len(output_for_finished)}, Total: {len(tasks)}")
+    logger.info(f"Number of failures: {len(number_of_failures)}")
+    for reason, count in failure_reasons.items():
+        logger.info(f"\t{reason}: {count}")
+
+
+async def report(tg, root_span, tasks):
     await asyncio.sleep(5)
     in_progress_client_count = len(tg._tasks) - 1  # exclude this report task
     loop = asyncio.get_running_loop()
@@ -124,13 +163,8 @@ async def report(tg, root_span):
         logger.info(
             f"In progress client count: {in_progress_client_count}, scheduled_async_calls: {scheduled_async_calls}")
 
-        logger.info("---------Span summary for finished spans:---------")
-        span_summary = root_span.build_summary()
-        for span_name, durations in span_summary.items():
-            avg = sum(durations) / len(durations) if len(durations) > 0 else 0
-            logger.info(
-                f"\t{span_name:<80} ({len(durations):>5} executions) with average {avg:.4f} seconds")
-        print("------------------\n\n\n\n")
+        report_span(root_span)
+        report_tasks(tasks)
 
         tg.create_task(report(tg, root_span))
 
@@ -157,11 +191,18 @@ async def runPass(total_client_count, concurrent_client_count, max_concurrent_ws
             async with client_sem:
                 await cl.start(root_span, http_req_semaphore, ws_req_semaphore)
 
+        tasks = []
+
         async with asyncio.TaskGroup() as tg:
-            tg.create_task(report(tg, root_span))
+            tg.create_task(report(tg, root_span, tasks))
 
             for client in clients:
-                tg.create_task(start_client(client))
+                task = tg.create_task(start_client(client))
+                tasks.append(task)
+
+    logger.info("Done!")
+    report_span(root_span)
+    report_tasks(tasks)
 
 
 async def main():

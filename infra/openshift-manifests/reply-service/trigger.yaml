@@ -45,5 +45,19 @@ spec:
       apiVersion: v1
       kind: Service
       name: reply-service-internal-3
-
-
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: reply-service-trigger-4
+  namespace: ai-demo
+spec:
+  broker: predictions-broker
+  filter:
+    attributes:
+      type: eventmesh.ai-demo.prediction
+  subscriber:
+    ref:
+      apiVersion: v1
+      kind: Service
+      name: reply-service-internal-4

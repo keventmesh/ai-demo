@@ -68,6 +68,13 @@ function add_minio_webhook(){
 function patch_knative_serving(){
     # patch knative serving to use http instead of https in the service status url
     oc patch knativeserving -n knative-serving knative-serving -p '{"spec":{"config":{"network":{"default-external-scheme": "http"}}}}' --type=merge
+
+    # patch knative serving to only keep one revision of a service
+    kubectl patch configmap/config-gc \
+        -n knative-serving \
+        --type merge \
+        -p '{"data":{"min-non-active-revisions":"0", "max-non-active-revisions":"0"}}'
+
     # wait until knative serving is ready
     oc wait --for=condition=Ready knativeserving -n knative-serving knative-serving
 }
