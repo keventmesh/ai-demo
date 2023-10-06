@@ -77,13 +77,14 @@ class Client:
 
         try:
             with root_span.subspan("client") as client_span:
+
                 with client_span.subspan("init_ws_connection") as init_ws_connection_span:
                     async with ws_req_semaphore:
                         with init_ws_connection_span.subspan("do_init_ws_connection"):
                             ok, ws_conn = await init_reply_ws_connection(self.reply_service_url, self.fake)
                             if not ok:
                                 logger.warning(f"Failed to init ws connection, stopping processing with client")
-                                return False, "init_ws_connection"
+                                return "init_ws_connection"
 
                 with client_span.subspan("upload") as upload_span:
                     async with http_req_semaphore:
@@ -91,21 +92,21 @@ class Client:
                             ok, upload_id = await upload(image_path, self.upload_service_url, self.fake)
                             if not ok:
                                 logger.warning(f"Failed to upload {image_path}, stopping processing with client")
-                                return False, "upload"
+                                return "upload"
 
                 with client_span.subspan("reply") as reply_span:
                     async with ws_req_semaphore:
                         with reply_span.subspan("wait_for_reply"):
                             ok, _ = await wait_for_reply(ws_conn, upload_id, self.fake)
                             if not ok:
-                                logger.warning(
-                                    f"Failed to wait for reply for {upload_id}, stopping processing with client")
-                                return
+                                logger.warning(f"Failed to wait for reply for {upload_id}, stopping processing with client")
+                                return "wait_for_reply"
+
                             ok, _ = await disconnect_ws(ws_conn, self.fake)
                             if not ok:
                                 logger.warning(
                                     f"Failed to disconnect from reply servicefor {upload_id} , stopping processing with client")
-                                return False, "reply"
+                                return "disconnect_ws"
 
                 with client_span.subspan("feedback") as feedback_span:
                     async with http_req_semaphore:
@@ -113,13 +114,13 @@ class Client:
                             ok, _ = await send_feedback(upload_id, feedback, self.feedback_service_url, self.fake)
                             if not ok:
                                 logger.warning(f"Failed to send feedback for {upload_id}, stopping processing with client")
-                                return False, "feedback"
-            return True, None
+                                return "feedback"
+
+            return "ok"
         except Exception as e:
             logger.warning(f"Exception in client: {e}")
             logger.warning(e, exc_info=True)
-            return False, "client"
-
+            return "client"
 
 def report_span(root_span):
     logger.info("---------Span summary for finished spans:---------")
@@ -154,7 +155,7 @@ def report_tasks(tasks):
         logger.info(f"\t{reason}: {count}")
 
 
-async def report(tg, root_span, tasks):
+async def report(tg, root_span):
     await asyncio.sleep(5)
     in_progress_client_count = len(tg._tasks) - 1  # exclude this report task
     loop = asyncio.get_running_loop()
@@ -164,7 +165,6 @@ async def report(tg, root_span, tasks):
             f"In progress client count: {in_progress_client_count}, scheduled_async_calls: {scheduled_async_calls}")
 
         report_span(root_span)
-        report_tasks(tasks)
 
         tg.create_task(report(tg, root_span))
 
@@ -194,15 +194,13 @@ async def runPass(total_client_count, concurrent_client_count, max_concurrent_ws
         tasks = []
 
         async with asyncio.TaskGroup() as tg:
-            tg.create_task(report(tg, root_span, tasks))
+            tg.create_task(report(tg, root_span))
 
             for client in clients:
                 task = tg.create_task(start_client(client))
                 tasks.append(task)
 
     logger.info("Done!")
-    report_span(root_span)
-    report_tasks(tasks)
 
 
 async def main():
