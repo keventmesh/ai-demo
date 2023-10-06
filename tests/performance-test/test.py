@@ -133,16 +133,13 @@ def report_span(root_span):
 
 
 def report_tasks(tasks):
-    output_for_finished = []  # List[(bool, str)]
+    output_for_finished = []  # List[str]
     for task in tasks:
         if task.done():
             output_for_finished.append(task.result())
 
-    number_of_failures = [x for x in output_for_finished if not x[0]]
     failure_reasons = {}
-    for ok, reason in number_of_failures:
-        if ok:
-            continue
+    for reason in output_for_finished:
         if reason not in failure_reasons:
             failure_reasons[reason] = 0
         failure_reasons[reason] += 1
@@ -150,12 +147,11 @@ def report_tasks(tasks):
     logger.info("---------Task summary of tasks so far:---------")
     logger.info(
         f"Done: {len(output_for_finished)}, In progress: {len(tasks) - len(output_for_finished)}, Total: {len(tasks)}")
-    logger.info(f"Number of failures: {len(number_of_failures)}")
     for reason, count in failure_reasons.items():
         logger.info(f"\t{reason}: {count}")
 
 
-async def report(tg, root_span):
+async def report(tg, root_span, tasks):
     await asyncio.sleep(5)
     in_progress_client_count = len(tg._tasks) - 1  # exclude this report task
     loop = asyncio.get_running_loop()
@@ -165,8 +161,9 @@ async def report(tg, root_span):
             f"In progress client count: {in_progress_client_count}, scheduled_async_calls: {scheduled_async_calls}")
 
         report_span(root_span)
+        report_tasks(tasks)
 
-        tg.create_task(report(tg, root_span))
+        tg.create_task(report(tg, root_span, tasks))
 
 
 async def runPass(total_client_count, concurrent_client_count, max_concurrent_ws_requests, max_concurrent_http_requests,
@@ -189,18 +186,25 @@ async def runPass(total_client_count, concurrent_client_count, max_concurrent_ws
     with Span("root") as root_span:
         async def start_client(cl):
             async with client_sem:
-                await cl.start(root_span, http_req_semaphore, ws_req_semaphore)
+                try:
+                    return await cl.start(root_span, http_req_semaphore, ws_req_semaphore)
+                except Exception as e:
+                    logger.warning(f"Exception in client: {e}")
+                    logger.warning(e, exc_info=True)
+                    return "client_wrapper"
 
         tasks = []
 
         async with asyncio.TaskGroup() as tg:
-            tg.create_task(report(tg, root_span))
+            tg.create_task(report(tg, root_span, tasks))
 
             for client in clients:
                 task = tg.create_task(start_client(client))
                 tasks.append(task)
 
-    logger.info("Done!")
+    logger.info("\n\n\n\n\n\n-----------------Done!------------------------------------------")
+    report_span(root_span)
+    report_tasks(tasks)
 
 
 async def main():
@@ -220,8 +224,8 @@ async def main():
     # args = parser.parse_args()
 
     args = {
-        'total_client_count': 100,
-        'concurrent_client_count': 30,
+        'total_client_count': 200,
+        'concurrent_client_count': 50,
         'max_concurrent_http_requests': 600,
         'max_concurrent_ws_requests': 600,
         'upload_service': 'http://upload-service-ai-demo.apps.aliok-c147.serverless.devcluster.openshift.com',
