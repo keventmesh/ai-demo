@@ -7,6 +7,10 @@ metadata:
     app: prediction-service
 spec:
   template:
+    metadata:
+      annotations:
+        # Target 10 requests in-flight per pod.
+        autoscaling.knative.dev/target: "3"
     spec:
       containers:
         - image: quay.io/kevent-mesh/ai-demo-prediction-service:main
