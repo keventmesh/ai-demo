@@ -9,8 +9,9 @@ spec:
   template:
     metadata:
       annotations:
-        # Target 10 requests in-flight per pod.
         autoscaling.knative.dev/target: "8"
+        autoscaling.knative.dev/min-scale: "3"
+        autoscaling.knative.dev/max-scale: "10"
     spec:
       containers:
         - image: quay.io/kevent-mesh/ai-demo-minio-webhook-source:main
