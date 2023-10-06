@@ -7,7 +7,7 @@ import socketio
 import logging
 
 DEFAULT_HTTP_REQUEST_TIMEOUT = 3600
-DEFAULT_WS_CONNECTION_TIMEOUT=3600
+DEFAULT_WS_CONNECTION_TIMEOUT = 3600
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,9 @@ async def init_reply_ws_connection(reply_service_url, fake):
     # http_session.verify = False
     # sio = socketio.AsyncClient(http_session=http_session)
     try:
-        sio = socketio.AsyncClient(request_timeout=DEFAULT_WS_CONNECTION_TIMEOUT, logger=logger.isEnabledFor(logging.DEBUG), engineio_logger=logger.isEnabledFor(logging.DEBUG))
+        sio = socketio.AsyncClient(request_timeout=DEFAULT_WS_CONNECTION_TIMEOUT,
+                                   logger=logger.isEnabledFor(logging.DEBUG),
+                                   engineio_logger=logger.isEnabledFor(logging.DEBUG))
         await sio.connect(reply_service_url, transports=['websocket'])
         return True, sio
     except Exception as e:
@@ -97,6 +99,11 @@ async def wait_for_reply(conn, upload_id, fake):
 
     def on_disconnect():
         logger.debug(f"Disconnected from reply service. upload_id: {upload_id}")
+        if fut.done():
+            logger.debug(f"Future was already done for {upload_id}")
+        else:
+            logger.error(f"Future was not done for {upload_id}")
+            fut.set_exception(Exception(f"Disconnected from reply service. upload_id: {upload_id}"))
 
     conn.on('connect', on_connect)
     conn.on('disconnect', on_disconnect)

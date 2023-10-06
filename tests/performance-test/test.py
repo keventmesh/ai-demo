@@ -124,12 +124,13 @@ async def report(tg, root_span):
         logger.info(
             f"In progress client count: {in_progress_client_count}, scheduled_async_calls: {scheduled_async_calls}")
 
-        logger.info("Span summary for finished spans:")
+        logger.info("---------Span summary for finished spans:---------")
         span_summary = root_span.build_summary()
         for span_name, durations in span_summary.items():
             avg = sum(durations) / len(durations) if len(durations) > 0 else 0
             logger.info(
                 f"\t{span_name:<80} ({len(durations):>5} executions) with average {avg:.4f} seconds")
+        print("------------------\n\n\n\n")
 
         tg.create_task(report(tg, root_span))
 
@@ -180,10 +181,10 @@ async def main():
     # args = parser.parse_args()
 
     args = {
-        'total_client_count': 500,
-        'concurrent_client_count': 100,
-        'max_concurrent_http_requests': 100,
-        'max_concurrent_ws_requests': 100,
+        'total_client_count': 100,
+        'concurrent_client_count': 30,
+        'max_concurrent_http_requests': 600,
+        'max_concurrent_ws_requests': 600,
         'upload_service': 'http://upload-service-ai-demo.apps.aliok-c147.serverless.devcluster.openshift.com',
         'feedback_service': 'http://feedback-service-ai-demo.apps.aliok-c147.serverless.devcluster.openshift.com',
         'reply_service': 'http://reply-service-ai-demo.apps.aliok-c147.serverless.devcluster.openshift.com',
