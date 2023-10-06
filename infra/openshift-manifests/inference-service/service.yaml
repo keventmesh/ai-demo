@@ -10,7 +10,7 @@ spec:
     metadata:
       annotations:
         # Target 10 requests in-flight per pod.
-        autoscaling.knative.dev/target: "3"
+        autoscaling.knative.dev/target: "2"
     spec:
       containers:
         - image: quay.io/kevent-mesh/ai-demo-inference-service-v1:main
