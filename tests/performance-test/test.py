@@ -2,25 +2,51 @@ import asyncio
 import json
 import time
 
+import logging
+
 from lib import upload, send_feedback, wait_for_reply, init_reply_ws_connection
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+class SpanStore:
+    def __init__(self):
+        self.spans_by_name = {} # name -> span count
+
+    def started(self, name):
+        if name not in self.spans_by_name:
+            self.spans_by_name[name] = 0
+        self.spans_by_name[name] += 1
+
+    def ended(self, name):
+        self.spans_by_name[name] -= 1
+        if self.spans_by_name[name] == 0:
+            del self.spans_by_name[name]
+
+    def summary(self):
+        out = ""
+        for name, count in self.spans_by_name.items():
+            out += f"{name}: {count}\n"
 
 class Span:
-    def __init__(self, name, parent=None):
+    def __init__(self, name, store, parent=None):
         self.name = name
         self.start_time = time.time()
         self.end_time = None
         self.children = []
+        self.store = store
         self.parent = parent
+        self.store.started(name)
 
     def start(self, name):
-        s = Span(name, self)
+        s = Span(name, self.store, self)
         s.start_time = time.time()
         self.children.append(s)
         return s
 
     def end(self):
         self.end_time = time.time()
+        self.store.started(self.name)
         return self.parent
 
     def print(self, indent=0):
@@ -65,7 +91,7 @@ class Client:
             s = s.start("do_init_ws_connection")
             ok, ws_conn = await init_reply_ws_connection(self.reply_service_url)
             if not ok:
-                print(f"Failed to init ws connection, killing client")
+                logger.warning(f"Failed to init ws connection, killing client")
                 s.end().end()
                 return
             s = s.end()
@@ -76,7 +102,7 @@ class Client:
             s = s.start("send_upload_request")
             ok, upload_id = await upload(image_path, self.upload_service_url)
             if not ok:
-                print(f"Failed to upload {image_path}, killing client")
+                logger.warning(f"Failed to upload {image_path}, killing client")
                 s.end().end()
                 return
             s = s.end()
@@ -87,13 +113,13 @@ class Client:
             s = s.start("wait_for_reply")
             ok, _ = await wait_for_reply(ws_conn, upload_id)
             if not ok:
-                print(f"Failed to wait for reply for {upload_id}, killing client")
+                logger.warning(f"Failed to wait for reply for {upload_id}, killing client")
                 s.end().end()
                 return
             try:
                 await ws_conn.disconnect()
             except Exception as e:
-                print(f"Failed to disconnect from reply service: {e}, killing client")
+                logger.warning(f"Failed to disconnect from reply service: {e}, killing client")
                 s.end().end()
                 return
 
@@ -105,7 +131,7 @@ class Client:
             s = s.start("send_feedback_request")
             ok, _ = await send_feedback(upload_id, feedback, self.feedback_service_url)
             if not ok:
-                print(f"Failed to send feedback for {upload_id}, killing client")
+                logger.warning(f"Failed to send feedback for {upload_id}, killing client")
                 s.end().end()
                 return
             s = s.end()
@@ -120,7 +146,7 @@ async def runPass(total_client_count, concurrent_client_count, max_concurrent_ws
     with open(input_file) as f:
         image_data_list = json.load(f)
 
-    print(f"There are {len(image_data_list)} images in the input file.")
+    logger.info(f"There are {len(image_data_list)} images in the input file.")
 
     clients = []
     for i in range(total_client_count):
@@ -132,7 +158,8 @@ async def runPass(total_client_count, concurrent_client_count, max_concurrent_ws
 
     client_sem = asyncio.Semaphore(concurrent_client_count)
 
-    root_span = Span("root")
+    span_store = SpanStore()
+    root_span = Span("root", span_store)
 
     async def start_client(cl):
         async with client_sem:
@@ -145,11 +172,11 @@ async def runPass(total_client_count, concurrent_client_count, max_concurrent_ws
     root_span.end()
 
     # print root span time
-    print(f"Total time: {root_span.end_time - root_span.start_time}")
+    logger.info(f"Total time: {root_span.end_time - root_span.start_time}")
 
     span_summary = root_span.build_summary()
     for span_name, durations in span_summary.items():
-        print(
+        logger.info(
             f"{span_name:<80} ({len(durations):>5} executions) with average {sum(durations) / len(durations):.4f} seconds")
 
 
@@ -165,6 +192,7 @@ async def main():
     # parser.add_argument('--feedback-service', type=str, required=True, help='feedback service url')
     # parser.add_argument('--reply-service', type=str, required=True, help='reply service url')
     # parser.add_argument('--input', type=str, required=True, help='input JSON file')
+    # parser.add_argument('--verbose', type=str, help='Enable verbose logging')
     # args = parser.parse_args()
 
     args = {
@@ -175,7 +203,9 @@ async def main():
         'upload_service': 'http://upload-service-ai-demo.apps.aliok-c145.serverless.devcluster.openshift.com',
         'feedback_service': 'http://feedback-service-ai-demo.apps.aliok-c145.serverless.devcluster.openshift.com',
         'reply_service': 'http://reply-service-ai-demo.apps.aliok-c145.serverless.devcluster.openshift.com',
-        'input': 'data.json'
+        'input': 'data.json',
+        # 'verbose': True,
+        'verbose': False,
     }
 
     class FakeArgs:
@@ -184,7 +214,10 @@ async def main():
 
     args = FakeArgs(args)
 
-    print(args.__dict__)
+    logger.info(args.__dict__)
+
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
 
     await runPass(args.total_client_count, args.concurrent_client_count,
                   args.max_concurrent_ws_requests, args.max_concurrent_http_requests,
