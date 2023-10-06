@@ -31,6 +31,22 @@ spec:
         - containerPort: 8080
 ---
 apiVersion: v1
+kind: Pod
+metadata:
+  name: reply-service-3
+  namespace: ai-demo
+  labels:
+    app: reply-service
+    instance: reply-service-3
+spec:
+  containers:
+    - name: reply-service
+      image: quay.io/kevent-mesh/ai-demo-reply-service:main
+      imagePullPolicy: Always
+      ports:
+        - containerPort: 8080
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: reply-service-internal-1
@@ -51,6 +67,19 @@ metadata:
 spec:
   selector:
     instance: reply-service-2
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reply-service-internal-3
+  namespace: ai-demo
+spec:
+  selector:
+    instance: reply-service-3
   ports:
     - protocol: TCP
       port: 80
