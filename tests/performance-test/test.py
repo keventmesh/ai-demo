@@ -63,28 +63,51 @@ class Client:
         s = s.start("init_ws_connection")
         async with ws_req_semaphore:
             s = s.start("do_init_ws_connection")
-            ws_conn = await init_reply_ws_connection(self.upload_service_url)
+            ok, ws_conn = await init_reply_ws_connection(self.reply_service_url)
+            if not ok:
+                print(f"Failed to init ws connection, killing client")
+                s.end().end()
+                return
             s = s.end()
         s = s.end()
 
         s = s.start("upload")
         async with http_req_semaphore:
             s = s.start("send_upload_request")
-            upload_id = await upload(image_path, self.upload_service_url)
+            ok, upload_id = await upload(image_path, self.upload_service_url)
+            if not ok:
+                print(f"Failed to upload {image_path}, killing client")
+                s.end().end()
+                return
             s = s.end()
         s = s.end()
 
         s = s.start("reply")
         async with ws_req_semaphore:
             s = s.start("wait_for_reply")
-            await wait_for_reply(ws_conn, upload_id)
+            ok, _ = await wait_for_reply(ws_conn, upload_id)
+            if not ok:
+                print(f"Failed to wait for reply for {upload_id}, killing client")
+                s.end().end()
+                return
+            try:
+                await ws_conn.disconnect()
+            except Exception as e:
+                print(f"Failed to disconnect from reply service: {e}, killing client")
+                s.end().end()
+                return
+
             s = s.end()
         s = s.end()
 
         s = s.start("feedback")
         async with http_req_semaphore:
             s = s.start("send_feedback_request")
-            await send_feedback(upload_id, feedback, self.feedback_service_url)
+            ok, _ = await send_feedback(upload_id, feedback, self.feedback_service_url)
+            if not ok:
+                print(f"Failed to send feedback for {upload_id}, killing client")
+                s.end().end()
+                return
             s = s.end()
         s = s.end()
 
@@ -92,31 +115,22 @@ class Client:
         s.end()
 
 
-async def runPass(totalClientCount, concurrentClientCount, maxConcurrentWsRequests, maxConcurrentHttpRequests,
-                  uploadService,
-                  feedbackService, replyService, input):
-    print(f"totalClientCount: {totalClientCount}")
-    print(f"concurrentClientCount: {concurrentClientCount}")
-    print(f"maxConcurrentHttpRequests: {maxConcurrentHttpRequests}")
-    print(f"maxConcurrentWsRequests: {maxConcurrentWsRequests}")
-    print(f"uploadService: {uploadService}")
-    print(f"feedbackService: {feedbackService}")
-    print(f"replyService: {replyService}")
-    print(f"input: {input}")
-
-    with open(input) as f:
+async def runPass(total_client_count, concurrent_client_count, max_concurrent_ws_requests, max_concurrent_http_requests,
+                  upload_service, feedback_service, reply_service, input_file):
+    with open(input_file) as f:
         image_data_list = json.load(f)
 
     print(f"There are {len(image_data_list)} images in the input file.")
 
     clients = []
-    for i in range(totalClientCount):
-        clients.append(Client(image_data_list, i % len(image_data_list), uploadService, feedbackService, replyService))
+    for i in range(total_client_count):
+        clients.append(
+            Client(image_data_list, i % len(image_data_list), upload_service, feedback_service, reply_service))
 
-    http_req_semaphore = asyncio.Semaphore(maxConcurrentHttpRequests)
-    ws_req_semaphore = asyncio.Semaphore(maxConcurrentWsRequests)
+    http_req_semaphore = asyncio.Semaphore(max_concurrent_http_requests)
+    ws_req_semaphore = asyncio.Semaphore(max_concurrent_ws_requests)
 
-    client_sem = asyncio.Semaphore(concurrentClientCount)
+    client_sem = asyncio.Semaphore(concurrent_client_count)
 
     root_span = Span("root")
 
@@ -135,31 +149,47 @@ async def runPass(totalClientCount, concurrentClientCount, maxConcurrentWsReques
 
     span_summary = root_span.build_summary()
     for span_name, durations in span_summary.items():
-        print(f"{span_name:<80} ({len(durations):>5} executions) with average {sum(durations) / len(durations):.4f} seconds")
+        print(
+            f"{span_name:<80} ({len(durations):>5} executions) with average {sum(durations) / len(durations):.4f} seconds")
 
 
 async def main():
-    # params:
-    #   --total-clients:                  number of total clients
-    #   --concurrent-clients:             number of concurrent clients
-    #   --max-concurrent-http-requests:   max number of concurrent HTTP requests (upload+feedback) in total for all clients
-    #   --max-concurrent-ws-requests:     max number of concurrent WS requests (reply) in total for all clients
-    #   --upload-service:                 upload service url
-    #   --feedback-service:               feedback service url
-    #   --reply-service:                  reply service url
-    #   --input:                          input JSON file
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--total-clients', type=int, required=True, help='number of total clients')
+    # parser.add_argument('--concurrent-clients', type=int, required=True, help='number of concurrent clients')
+    # parser.add_argument('--max-concurrent-http-requests', type=int, required=True,
+    #                     help='max number of concurrent HTTP requests (upload+feedback) in total for all clients')
+    # parser.add_argument('--max-concurrent-ws-requests', type=int, required=True,
+    #                     help='max number of concurrent WS requests (reply) in total for all clients')
+    # parser.add_argument('--upload-service', type=str, required=True, help='upload service url')
+    # parser.add_argument('--feedback-service', type=str, required=True, help='feedback service url')
+    # parser.add_argument('--reply-service', type=str, required=True, help='reply service url')
+    # parser.add_argument('--input', type=str, required=True, help='input JSON file')
+    # args = parser.parse_args()
 
-    totalClientCount = 10
-    concurrentClientCount = 2
-    maxConcurrentHttpRequests = 20
-    maxConcurrentWsRequests = 20
-    uploadService = 'http://localhost:8080/upload'
-    feedbackService = 'http://localhost:8080/feedback'
-    replyService = 'ws://localhost:8080/reply'
-    input = 'data.json'
+    args = {
+        'total_client_count': 5,
+        'concurrent_client_count': 50,
+        'max_concurrent_http_requests': 100,
+        'max_concurrent_ws_requests': 100,
+        'upload_service': 'http://upload-service-ai-demo.apps.aliok-c145.serverless.devcluster.openshift.com',
+        'feedback_service': 'http://feedback-service-ai-demo.apps.aliok-c145.serverless.devcluster.openshift.com',
+        'reply_service': 'http://reply-service-ai-demo.apps.aliok-c145.serverless.devcluster.openshift.com',
+        'input': 'data.json'
+    }
 
-    await runPass(totalClientCount, concurrentClientCount, maxConcurrentWsRequests,
-                  maxConcurrentHttpRequests, uploadService, feedbackService, replyService, input)
+    class FakeArgs:
+        def __init__(self, args):
+            self.__dict__.update(args)
+
+    args = FakeArgs(args)
+
+    print(args.__dict__)
+
+    await runPass(args.total_client_count, args.concurrent_client_count,
+                  args.max_concurrent_ws_requests, args.max_concurrent_http_requests,
+                  args.upload_service, args.feedback_service, args.reply_service,
+                  args.input)
 
 
 if __name__ == '__main__':
