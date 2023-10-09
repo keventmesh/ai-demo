@@ -153,18 +153,22 @@ def report_tasks(tasks):
 
 
 async def report(tg, root_span, tasks):
-    await asyncio.sleep(5)
-    in_progress_client_count = len(tg._tasks) - 1  # exclude this report task
-    loop = asyncio.get_running_loop()
-    scheduled_async_calls = len(loop._scheduled)
-    if in_progress_client_count > 0:
-        logger.info(
-            f"In progress client count: {in_progress_client_count}, scheduled_async_calls: {scheduled_async_calls}")
+   try:
+       await asyncio.sleep(5)
+       in_progress_client_count = len(tg._tasks) - 1  # exclude this report task
+       loop = asyncio.get_running_loop()
+       scheduled_async_calls = len(loop._scheduled)
+       if in_progress_client_count > 0:
+           logger.info(
+               f"In progress client count: {in_progress_client_count}, scheduled_async_calls: {scheduled_async_calls}")
 
-        report_span(root_span)
-        report_tasks(tasks)
+           report_span(root_span)
+           report_tasks(tasks)
 
-        tg.create_task(report(tg, root_span, tasks))
+           tg.create_task(report(tg, root_span, tasks))
+   except Exception as e:
+     logger.warning(f"Exception in report: {e}")
+     logger.warning(e, exc_info=True)
 
 
 async def runPass(total_client_count, concurrent_client_count, max_concurrent_ws_requests, max_concurrent_http_requests,
