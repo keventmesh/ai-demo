@@ -172,7 +172,7 @@ async def report(tg, root_span, tasks):
 
 
 async def runPass(total_client_count, concurrent_client_count, max_concurrent_ws_requests, max_concurrent_http_requests,
-                  upload_service, feedback_service, reply_service, input_file, fake):
+                  upload_service, feedback_service, reply_service, input_file, fake, regular_report):
     with open(input_file) as f:
         image_data_list = json.load(f)
 
@@ -201,13 +201,14 @@ async def runPass(total_client_count, concurrent_client_count, max_concurrent_ws
         tasks = []
 
         async with asyncio.TaskGroup() as tg:
-            tg.create_task(report(tg, root_span, tasks))
+            if regular_report:
+                tg.create_task(report(tg, root_span, tasks))
 
             for client in clients:
                 task = tg.create_task(start_client(client))
                 tasks.append(task)
 
-    logger.info("\n\n\n\n\n\n-----------------Done!------------------------------------------")
+    logger.info("-----------------Done!------------------------------------------")
     report_span(root_span)
     report_tasks(tasks)
 
@@ -226,6 +227,7 @@ async def main():
     # parser.add_argument('--input', type=str, required=True, help='input JSON file')
     # parser.add_argument('--verbose', type=str, help='Enable verbose logging')
     # parser.add_argument('--fake', type=str, help='Don't actually call any services, just sleep')
+    # parser.add_argument('--regular-report', type=str, help='Report progress every 5 seconds')
     # args = parser.parse_args()
 
     args = {
@@ -241,6 +243,8 @@ async def main():
         'verbose': False,
         # 'fake': True,
         'fake': False,
+        # 'regular_report': False,
+        'regular_report': True,
     }
 
     class FakeArgs:
@@ -259,7 +263,7 @@ async def main():
     await runPass(args.total_client_count, args.concurrent_client_count,
                   args.max_concurrent_ws_requests, args.max_concurrent_http_requests,
                   args.upload_service, args.feedback_service, args.reply_service,
-                  args.input, args.fake)
+                  args.input, args.fake, args.regular_report)
 
 
 if __name__ == '__main__':
