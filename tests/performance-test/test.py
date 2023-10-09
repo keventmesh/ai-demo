@@ -72,6 +72,8 @@ class Client:
         self.fake = fake
 
     async def start(self, root_span, http_req_semaphore, ws_req_semaphore):
+        logger.debug(f"Client {self.image_index} started")
+
         image_data = self.image_data_list[self.image_index]
         image_path = image_data['image']
         feedback = image_data['feedback']
@@ -103,13 +105,6 @@ class Client:
                                 logger.warning(f"Failed to wait for reply for {upload_id}, stopping processing with client")
                                 return "wait_for_reply"
 
-                        with reply_span.subspan("disconnect"):
-                            ok, _ = await disconnect_ws(ws_conn, self.fake)
-                            if not ok:
-                                logger.warning(
-                                    f"Failed to disconnect from reply service for {upload_id} , stopping processing with client")
-                                return "disconnect_ws"
-
                 with client_span.subspan("feedback") as feedback_span:
                     async with http_req_semaphore:
                         with feedback_span.subspan("send_feedback_request"):
@@ -123,14 +118,25 @@ class Client:
             logger.warning(f"Exception in client: {e}")
             logger.warning(e, exc_info=True)
             return "client"
+        finally:
+            logger.debug(f"Client {self.image_index} done")
+            if ws_conn is not None:
+                ok, _ = await disconnect_ws(ws_conn, self.fake)
+                if not ok:
+                    logger.warning(
+                        f"Failed to disconnect from reply service for {upload_id} , stopping processing with client")
+
 
 def report_span(root_span):
     logger.info("---------Span summary for finished spans:---------")
     span_summary = root_span.build_summary()
     for span_name, durations in span_summary.items():
         avg = sum(durations) / len(durations) if len(durations) > 0 else 0
+        min_duration = min(durations) if len(durations) > 0 else 0
+        max_duration = max(durations) if len(durations) > 0 else 0
         logger.info(
-            f"\t{span_name:<80} ({len(durations):>5} executions) with average {avg:.4f} seconds")
+            f"\t{span_name:<80} ({len(durations):>5} executions) with average {avg:.4f} seconds (min: {min_duration :.4f}, max: {max_duration :.4f})")
+        # logger.info(f"\t\t{durations}")
     print("------------------\n\n\n\n")
 
 
