@@ -3,6 +3,7 @@ import io
 import os
 import signal
 import sys
+import time
 import uuid
 
 import boto3
@@ -67,53 +68,59 @@ signal.signal(signal.SIGTERM, handler)
 @app.post("/")
 @cross_origin()
 def upload_request():
-    print("Received request")
-
-    # set req size limit in Flask
-    # https://stackoverflow.com/questions/25036498/is-it-possible-to-limit-flask-post-data-size-on-a-per-route-basis
-    content_length = request.content_length
-    if content_length is None:
-        return "Missing content-length", 400
-
-    if content_length > MAX_IMG_SIZE_IN_BYTES:
-        return f"Request length too large {content_length / 1024:.2f} KB", 400
-
-    if "image_b64" not in request.json:
-        return "Missing image_b64", 400
-
-    image_base64 = request.json["image_b64"]
-
-    if len(image_base64) > MAX_IMG_SIZE_IN_BYTES:
-        return f"Image too large {len(image_base64) / 1024:.2f} KB", 400
-
+    request_start_time = time.time()
     try:
-        base64_decoded = base64.b64decode(image_base64)
-    except Exception as e:
-        print(e)
-        return f"Failed to decode image", 400
+        print("Received request")
 
-    try:
-        image = Image.open(io.BytesIO(base64_decoded))
-    except Exception as e:
-        print(e)
-        return f"Failed to load the image", 400
+        # set req size limit in Flask
+        # https://stackoverflow.com/questions/25036498/is-it-possible-to-limit-flask-post-data-size-on-a-per-route-basis
+        content_length = request.content_length
+        if content_length is None:
+            return "Missing content-length", 400
 
-    width, height = image.size
-    if width > MAX_IMG_WIDTH or height > MAX_IMG_HEIGHT:
-        return f"Image too wide or tall {width}x{height}", 400
+        if content_length > MAX_IMG_SIZE_IN_BYTES:
+            return f"Request length too large {content_length / 1024:.2f} KB", 400
 
-    upload_id = uuid.uuid4().hex
+        if "image_b64" not in request.json:
+            return "Missing image_b64", 400
 
-    try:
-        print(f"Uploading {len(base64_decoded)} bytes with key {upload_id}")
-        s3.put_object(Bucket=S3_BUCKET_NAME, Key=upload_id, Body=base64_decoded)
-    except Exception as e:
-        print(e)
-        return f"Failed to upload", 500
+        image_base64 = request.json["image_b64"]
 
-    return {
-        "uploadId": upload_id
-    }, 200
+        if len(image_base64) > MAX_IMG_SIZE_IN_BYTES:
+            return f"Image too large {len(image_base64) / 1024:.2f} KB", 400
+
+        try:
+            base64_decoded = base64.b64decode(image_base64)
+        except Exception as e:
+            print(e)
+            return f"Failed to decode image", 400
+
+        try:
+            image = Image.open(io.BytesIO(base64_decoded))
+        except Exception as e:
+            print(e)
+            return f"Failed to load the image", 400
+
+        width, height = image.size
+        if width > MAX_IMG_WIDTH or height > MAX_IMG_HEIGHT:
+            return f"Image too wide or tall {width}x{height}", 400
+
+        upload_id = uuid.uuid4().hex
+
+        try:
+            upload_start_time = time.time()
+            print(f"Uploading {len(base64_decoded)} bytes with key {upload_id}")
+            s3.put_object(Bucket=S3_BUCKET_NAME, Key=upload_id, Body=base64_decoded)
+            print(f"Uploaded in {time.time() - upload_start_time:.2f} seconds")
+        except Exception as e:
+            print(e)
+            return f"Failed to upload", 500
+
+        return {
+            "uploadId": upload_id
+        }, 200
+    finally:
+        print(f"Request took {time.time() - request_start_time:.2f} seconds")
 
 
 if __name__ == "__main__":
