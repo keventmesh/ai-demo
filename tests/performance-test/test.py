@@ -253,12 +253,18 @@ async def main():
 
     args = FakeArgs(args)
 
-    logger.info(args.__dict__)
-
     if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(
+            format='%(asctime)s %(levelname)-8s %(message)s',
+            level=logging.DEBUG,
+            datefmt='%Y-%m-%d %H:%M:%S')
     else:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(
+            format='%(asctime)s %(levelname)-8s %(message)s',
+            level=logging.INFO,
+            datefmt='%Y-%m-%d %H:%M:%S')
+
+    logger.info(args.__dict__)
 
     await runPass(args.total_client_count, args.concurrent_client_count,
                   args.max_concurrent_ws_requests, args.max_concurrent_http_requests,
