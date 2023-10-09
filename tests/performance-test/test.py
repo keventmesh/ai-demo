@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import json
 import logging
@@ -214,44 +215,21 @@ async def runPass(total_client_count, concurrent_client_count, max_concurrent_ws
 
 
 async def main():
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('--total-clients', type=int, required=True, help='number of total clients')
-    # parser.add_argument('--concurrent-clients', type=int, required=True, help='number of concurrent clients')
-    # parser.add_argument('--max-concurrent-http-requests', type=int, required=True,
-    #                     help='max number of concurrent HTTP requests (upload+feedback) in total for all clients')
-    # parser.add_argument('--max-concurrent-ws-requests', type=int, required=True,
-    #                     help='max number of concurrent WS requests (reply) in total for all clients')
-    # parser.add_argument('--upload-service', type=str, required=True, help='upload service url')
-    # parser.add_argument('--feedback-service', type=str, required=True, help='feedback service url')
-    # parser.add_argument('--reply-service', type=str, required=True, help='reply service url')
-    # parser.add_argument('--input', type=str, required=True, help='input JSON file')
-    # parser.add_argument('--verbose', type=str, help='Enable verbose logging')
-    # parser.add_argument('--fake', type=str, help='Don't actually call any services, just sleep')
-    # parser.add_argument('--regular-report', type=str, help='Report progress every 5 seconds')
-    # args = parser.parse_args()
-
-    args = {
-        'total_client_count': 200,
-        'concurrent_client_count': 50,
-        'max_concurrent_http_requests': 600,
-        'max_concurrent_ws_requests': 600,
-        'upload_service': 'http://upload-service-ai-demo.apps.aliok-c147.serverless.devcluster.openshift.com',
-        'feedback_service': 'http://feedback-service-ai-demo.apps.aliok-c147.serverless.devcluster.openshift.com',
-        'reply_service': 'http://reply-service-ai-demo.apps.aliok-c147.serverless.devcluster.openshift.com',
-        'input': 'data.json',
-        # 'verbose': True,
-        'verbose': False,
-        # 'fake': True,
-        'fake': False,
-        # 'regular_report': False,
-        'regular_report': True,
-    }
-
-    class FakeArgs:
-        def __init__(self, args):
-            self.__dict__.update(args)
-
-    args = FakeArgs(args)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--total-clients', type=int, required=True, help='number of total clients')
+    parser.add_argument('--concurrent-clients', type=int, required=True, help='number of concurrent clients')
+    parser.add_argument('--max-concurrent-http-requests', type=int, required=True,
+                        help='max number of concurrent HTTP requests (upload+feedback) in total for all clients')
+    parser.add_argument('--max-concurrent-ws-requests', type=int, required=True,
+                        help='max number of concurrent WS requests (reply) in total for all clients')
+    parser.add_argument('--upload-service', type=str, required=True, help='upload service url')
+    parser.add_argument('--feedback-service', type=str, required=True, help='feedback service url')
+    parser.add_argument('--reply-service', type=str, required=True, help='reply service url')
+    parser.add_argument('--input', type=str, required=True, help='input JSON file')
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
+    parser.add_argument('--fake', action='store_true', help='Do not actually call any services, just sleep')
+    parser.add_argument('--regular-report', action='store_true', help='Report progress every 5 seconds')
+    args = parser.parse_args()
 
     if args.verbose:
         logging.basicConfig(
@@ -266,7 +244,7 @@ async def main():
 
     logger.info(args.__dict__)
 
-    await runPass(args.total_client_count, args.concurrent_client_count,
+    await runPass(args.total_clients, args.concurrent_clients,
                   args.max_concurrent_ws_requests, args.max_concurrent_http_requests,
                   args.upload_service, args.feedback_service, args.reply_service,
                   args.input, args.fake, args.regular_report)
