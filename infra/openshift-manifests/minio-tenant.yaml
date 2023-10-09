@@ -35,10 +35,10 @@ spec:
             - ReadWriteOnce
           resources:
             requests:
-              storage: 2Gi
+              storage: 5Gi
       name: pool-0
-      servers: 1
-      volumesPerServer: 1
+      servers: 2
+      volumesPerServer: 2
   features:
     domains: {}
     bucketDNS: false
