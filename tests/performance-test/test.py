@@ -102,10 +102,11 @@ class Client:
                                 logger.warning(f"Failed to wait for reply for {upload_id}, stopping processing with client")
                                 return "wait_for_reply"
 
+                        with reply_span.subspan("disconnect"):
                             ok, _ = await disconnect_ws(ws_conn, self.fake)
                             if not ok:
                                 logger.warning(
-                                    f"Failed to disconnect from reply servicefor {upload_id} , stopping processing with client")
+                                    f"Failed to disconnect from reply service for {upload_id} , stopping processing with client")
                                 return "disconnect_ws"
 
                 with client_span.subspan("feedback") as feedback_span:
