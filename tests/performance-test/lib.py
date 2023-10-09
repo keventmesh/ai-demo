@@ -9,6 +9,8 @@ import logging
 DEFAULT_HTTP_REQUEST_TIMEOUT = 3600
 DEFAULT_WS_CONNECTION_TIMEOUT = 3600
 
+DEFAULT_FAKE_SLEEP_TIME = 0.1
+
 logger = logging.getLogger(__name__)
 
 
@@ -16,7 +18,7 @@ async def upload(image_path, upload_service_url, fake):
     logger.debug(f"upload '{image_path}' to {upload_service_url}")
 
     if fake:
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_FAKE_SLEEP_TIME)
         return True, "fake_" + uuid.uuid4().hex
 
     with open(image_path, mode='rb') as file:
@@ -56,7 +58,7 @@ async def init_reply_ws_connection(reply_service_url, fake):
     logger.debug(f"init reply ws connection to {reply_service_url}")
 
     if fake:
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_FAKE_SLEEP_TIME)
         return True, {}
 
     # connector = aiohttp.TCPConnector(ssl=False)
@@ -77,7 +79,7 @@ async def init_reply_ws_connection(reply_service_url, fake):
 
 async def wait_for_reply(conn, upload_id, fake):
     if fake:
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_FAKE_SLEEP_TIME)
         return True, {"uploadId": "fake_" + uuid.uuid4().hex, "probability": 0.5, "x0": 0.1, "x1": 0.2, "y0": 0.3,
                       "y1": 0.4, "created_on": "2021-01-01T00:00:00.000Z"}
 
@@ -133,7 +135,7 @@ async def send_feedback(upload_id, feedback, feedback_service_url, fake):
     logger.debug(f"Send feedback for {upload_id} to {feedback_service_url}")
 
     if fake:
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_FAKE_SLEEP_TIME)
         return True, None
 
     data = {
@@ -158,7 +160,7 @@ async def disconnect_ws(conn, fake):
     logger.debug(f"Disconnect from reply service")
 
     if fake:
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_FAKE_SLEEP_TIME)
         return True, None
 
     try:
