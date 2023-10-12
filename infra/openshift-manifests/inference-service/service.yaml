@@ -15,6 +15,6 @@ spec:
         autoscaling.knative.dev/max-scale: "50"
     spec:
       containers:
-        - image: quay.io/kevent-mesh/ai-demo-inference-service-v2:main
+        - image: quay.io/kevent-mesh/ai-demo-inference-service-v1:main
           ports:
             - containerPort: 8501
