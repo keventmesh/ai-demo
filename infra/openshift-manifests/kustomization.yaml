@@ -32,6 +32,9 @@ images:
 - name: quay.io/kevent-mesh/ai-demo-inference-service-v1
   newName: "${DOCKER_REPO_OVERRIDE}/ai-demo-inference-service-v1"
   newTag: "${AI_DEMO_IMAGE_TAG}"
+- name: quay.io/kevent-mesh/ai-demo-inference-service-v2
+  newName: "${DOCKER_REPO_OVERRIDE}/ai-demo-inference-service-v2"
+  newTag: "${AI_DEMO_IMAGE_TAG}"
 - name: quay.io/kevent-mesh/ai-demo-upload-service
   newName: "${DOCKER_REPO_OVERRIDE}/ai-demo-upload-service"
   newTag: "${AI_DEMO_IMAGE_TAG}"
