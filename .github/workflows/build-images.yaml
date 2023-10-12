@@ -54,7 +54,7 @@ jobs:
 
       - name: Download model files for model v2
         run: |
-          gsutil cp -r gs://knative-ai-demo/kserve-models/knative_01/0001 ./services/inference-service/v2/model
+          gsutil cp -r gs://knative-ai-demo/kserve-models/knative_02/0001 ./services/inference-service/v2/model
           ls -la ./services/inference-service/v2/model
       - name: Build ai-demo-inference-service v2
         id: build-ai-demo-inference-service
