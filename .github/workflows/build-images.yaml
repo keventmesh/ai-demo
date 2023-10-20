@@ -41,7 +41,7 @@ jobs:
         id: build-ai-demo-inference-service-v1
         run: docker build services/inference-service/v1 --file services/inference-service/v1/Dockerfile -t ai-demo-inference-service-v1:${{ env.AI_DEMO_IMAGE_TAG }}
       - name: Push ai-demo-inference-service v1
-        id: push-ai-demo-inference-service
+        id: push-ai-demo-inference-service-v1
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ai-demo-inference-service-v1
@@ -50,7 +50,7 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Print ai-demo-inference-service image url
-        run: echo "ai-demo-inference-service image pushed to ${{ steps.push-ai-demo-inference-service.outputs.registry-paths }}"
+        run: echo "ai-demo-inference-service image pushed to ${{ steps.push-ai-demo-inference-service-v1.outputs.registry-paths }}"
 
       - name: Download model files for model v2
         run: |
@@ -60,7 +60,7 @@ jobs:
         id: build-ai-demo-inference-service-v2
         run: docker build services/inference-service/v2 --file services/inference-service/v2/Dockerfile -t ai-demo-inference-service-v2:${{ env.AI_DEMO_IMAGE_TAG }}
       - name: Push ai-demo-inference-service v2
-        id: push-ai-demo-inference-service
+        id: push-ai-demo-inference-service-v2
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ai-demo-inference-service-v2
@@ -69,7 +69,7 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Print ai-demo-inference-service image url
-        run: echo "ai-demo-inference-service image pushed to ${{ steps.push-ai-demo-inference-service.outputs.registry-paths }}"
+        run: echo "ai-demo-inference-service image pushed to ${{ steps.push-ai-demo-inference-service-v2.outputs.registry-paths }}"
 
       - name: Build ai-demo-upload-service
         id: build-ai-demo-upload-service
