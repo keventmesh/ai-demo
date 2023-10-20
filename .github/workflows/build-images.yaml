@@ -38,7 +38,7 @@ jobs:
           gsutil cp -r gs://knative-ai-demo/kserve-models/knative_01/0001 ./services/inference-service/v1/model
           ls -la ./services/inference-service/v1/model
       - name: Build ai-demo-inference-service v1
-        id: build-ai-demo-inference-service
+        id: build-ai-demo-inference-service-v1
         run: docker build services/inference-service/v1 --file services/inference-service/v1/Dockerfile -t ai-demo-inference-service-v1:${{ env.AI_DEMO_IMAGE_TAG }}
       - name: Push ai-demo-inference-service v1
         id: push-ai-demo-inference-service
@@ -57,7 +57,7 @@ jobs:
           gsutil cp -r gs://knative-ai-demo/kserve-models/knative_02/0001 ./services/inference-service/v2/model
           ls -la ./services/inference-service/v2/model
       - name: Build ai-demo-inference-service v2
-        id: build-ai-demo-inference-service
+        id: build-ai-demo-inference-service-v2
         run: docker build services/inference-service/v2 --file services/inference-service/v2/Dockerfile -t ai-demo-inference-service-v2:${{ env.AI_DEMO_IMAGE_TAG }}
       - name: Push ai-demo-inference-service v2
         id: push-ai-demo-inference-service
