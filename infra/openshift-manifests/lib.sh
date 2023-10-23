@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
 
+set -e pipefail
+
 script_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 function create_minio_client_config(){
     MINIO_ENDPOINT=$(oc get route -n minio-operator minio-endpoint -o jsonpath="{.status.ingress[0].host}")
 
     # create a temp directory on the host machine (your machine) to store the mc config
+    rm -rf /tmp/mc-config
     mkdir /tmp/mc-config
 
     # execute operations with /tmp/mc-config mounted to the container's /mc-config directory
     #
     # set alias for our minio instance
-    docker run --rm -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    alias set ai-demo "https://${MINIO_ENDPOINT}" minio minio1234
+    docker run --user "$(id -u):$(id -g)" --rm -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    alias set ai-demo "https://${MINIO_ENDPOINT}" minio minio1234
 }
 
 function delete_minio_client_config(){
@@ -41,7 +44,7 @@ EOF
 
 function create_bucket() {
     # create a bucket
-    docker run --rm -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    mb ai-demo/ai-demo --ignore-existing
+    docker run --rm --user "$(id -u):$(id -g)" -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    mb ai-demo/ai-demo --ignore-existing
 }
 
 function delete_minio_endpoint_route(){
@@ -50,19 +53,19 @@ function delete_minio_endpoint_route(){
 
 function add_minio_webhook(){
     # wait until minio-webhook-source Knative Service are ready
-    oc wait --for=condition=Ready ksvc -n ai-demo minio-webhook-source
+    oc wait --for=condition=Ready --timeout=20m ksvc -n ai-demo minio-webhook-source
 
     # get the internal address of the minio webhook service
     endpoint=$(oc get ksvc -n ai-demo minio-webhook-source -ojsonpath="{.status.address.url}")
 
     # set the webhook endpoint, which is our minio webhook source service
-    docker run --rm -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    admin config set ai-demo/ notify_webhook:minio-webhook-source endpoint="${endpoint}:80"
+    docker run --user "$(id -u):$(id -g)" --rm -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    admin config set ai-demo/ notify_webhook:minio-webhook-source endpoint="${endpoint}:80"
 
     # restart the minio service
-    docker run --rm -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    admin service restart ai-demo/
+    docker run --user "$(id -u):$(id -g)" --rm -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    admin service restart ai-demo/
 
     # Subscribe to PUT events
-    docker run --rm -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    event add ai-demo/ai-demo arn:minio:sqs::minio-webhook-source:webhook --event put --ignore-existing
+    docker run --user "$(id -u):$(id -g)" --rm -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    event add ai-demo/ai-demo arn:minio:sqs::minio-webhook-source:webhook --event put --ignore-existing
 }
 
 function patch_knative_serving(){
@@ -76,12 +79,13 @@ function patch_knative_serving(){
         -p '{"data":{"min-non-active-revisions":"0", "max-non-active-revisions":"0"}}'
 
     # wait until knative serving is ready
-    oc wait --for=condition=Ready knativeserving -n knative-serving knative-serving
+    oc wait --for=condition=Ready knativeserving --timeout=20m -n knative-serving knative-serving
 }
 
 function patch_ui_service_configmap(){
     # wait until services are ready
-    oc wait --for=condition=Ready ksvc -n ai-demo upload-service
+    oc wait --for=condition=Ready ksvc -n ai-demo --timeout=20m upload-service
+    oc wait --for=condition=Ready ksvc -n ai-demo --timeout=20m feedback-service
     # it is not easy to wait for a route
     # oc wait --for=... route -n ai-demo reply-service
 
@@ -105,10 +109,15 @@ function patch_ui_service_configmap(){
 
 }
 
-install_postgresql() {
+function install_postgresql() {
   oc process -n openshift postgresql-persistent -p POSTGRESQL_DATABASE=ai-demo -p VOLUME_CAPACITY=2Gi -p POSTGRESQL_USER=ai-demo -p POSTGRESQL_PASSWORD=ai-demo | oc apply -n ai-demo -f - || return $?
 }
 
-install_grafana_dashboard() {
-  kubectl create configmap grafana-admin-dashboard -n grafana --from-file="${script_dir}/analytics-service/grafana-admin-dashboard.json" --dry-run=client -oyaml | kubectl apply -f -
+function install_grafana_dashboard() {
+  oc wait --for=condition=Ready ksvc -n ai-demo --timeout=20m admin-service
+  admin_service_url=$(oc get ksvc -n ai-demo admin-service -o jsonpath="{.status.url}")
+
+  export ADMIN_SERVICE_URL=$admin_service_url
+
+  kubectl create configmap grafana-admin-dashboard -n grafana --from-file="${script_dir}/analytics-service/grafana-admin-dashboard.json" --dry-run=client -oyaml | envsubst '${ADMIN_SERVICE_URL}' | kubectl apply -f -
 }

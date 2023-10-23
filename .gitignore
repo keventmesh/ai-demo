@@ -12,3 +12,5 @@ kserve_test/models
 
 # sensitive data
 .build.secrets
+
+__pycache__

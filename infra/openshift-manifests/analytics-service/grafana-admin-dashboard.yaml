@@ -4,6 +4,9 @@ metadata:
   name: admin-dashboard
   namespace: grafana
 spec:
+  datasources:
+    - inputName: "DS_POSTGRESQL"
+      datasourceName: "postgresql"
   instanceSelector:
     matchLabels:
       dashboards: "grafana"
