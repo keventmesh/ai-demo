@@ -10,11 +10,16 @@ export AI_DEMO_IMAGE_TAG="${AI_DEMO_IMAGE_TAG:-main}"
 
 while ! kustomize build "${current_dir}" | envsubst | kubectl apply -f -;
 do
+  kubectl wait subscriptions.operators.coreos.com --for=condition=CatalogSourcesUnhealthy=false --timeout=20m -n minio-operator minio-operator
+  kubectl wait subscriptions.operators.coreos.com --for=condition=CatalogSourcesUnhealthy=false --timeout=20m -n openshift-operators grafana-operator
+  kubectl wait subscriptions.operators.coreos.com --for=condition=CatalogSourcesUnhealthy=false --timeout=20m -n openshift-serverless serverless-operator
   echo "waiting for resource apply to succeed"
   sleep 10
 done
 
 install_grafana_dashboard
+
+install_postgresql
 
 patch_knative_serving
 
@@ -23,8 +28,6 @@ delete_minio_endpoint_route
 delete_minio_client_config
 
 patch_ui_service_configmap
-
-install_postgresql
 
 # kubectl port-forward svc/grafana-service -n grafana 3000:3000 # Port-forward grafana
 
@@ -57,3 +60,6 @@ install_postgresql
 # docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    cp --recursive /mc-config ai-demo/ai-demo
 #
 # delete_minio_endpoint_route
+
+# docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    rm --recursive ai-demo/ai-demo  --dangerous --force
+# docker run -v /tmp/mc-config:/mc-config minio/mc:edge --config-dir=/mc-config --insecure    admin service restart ai-demo/

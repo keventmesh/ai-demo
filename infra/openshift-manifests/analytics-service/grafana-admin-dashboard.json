@@ -44,7 +44,7 @@
     {
       "datasource": {
         "type": "postgres",
-        "uid": "edc6e208-64e8-4622-bdf6-f996a4780924"
+        "uid": "${DS_POSTGRESQL}"
       },
       "fieldConfig": {
         "defaults": {
@@ -95,13 +95,13 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "edc6e208-64e8-4622-bdf6-f996a4780924"
+            "uid": "${DS_POSTGRESQL}"
           },
           "format": "table",
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT feedback, upload_id FROM feedbacks WHERE feedback <= 2 ORDER BY created_on LIMIT 50",
+          "rawSql": "SELECT feedback, CONCAT('${ADMIN_SERVICE_URL}/case?uploadId=', upload_id) as investigate FROM feedbacks WHERE feedback <= 2 ORDER BY created_on DESC LIMIT 50",
           "refId": "A",
           "select": [
             [
@@ -142,7 +142,7 @@
     {
       "datasource": {
         "type": "postgres",
-        "uid": "edc6e208-64e8-4622-bdf6-f996a4780924"
+        "uid": "${DS_POSTGRESQL}"
       },
       "fieldConfig": {
         "defaults": {
@@ -219,7 +219,7 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "edc6e208-64e8-4622-bdf6-f996a4780924"
+            "uid": "${DS_POSTGRESQL}"
           },
           "format": "time_series",
           "group": [],
@@ -253,7 +253,7 @@
     {
       "datasource": {
         "type": "postgres",
-        "uid": "edc6e208-64e8-4622-bdf6-f996a4780924"
+        "uid": "${DS_POSTGRESQL}"
       },
       "fieldConfig": {
         "defaults": {
@@ -330,7 +330,7 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "edc6e208-64e8-4622-bdf6-f996a4780924"
+            "uid": "${DS_POSTGRESQL}"
           },
           "format": "time_series",
           "group": [],
@@ -377,7 +377,7 @@
     {
       "datasource": {
         "type": "postgres",
-        "uid": "edc6e208-64e8-4622-bdf6-f996a4780924"
+        "uid": "${DS_POSTGRESQL}"
       },
       "fieldConfig": {
         "defaults": {
@@ -454,7 +454,7 @@
         {
           "datasource": {
             "type": "postgres",
-            "uid": "edc6e208-64e8-4622-bdf6-f996a4780924"
+            "uid": "${DS_POSTGRESQL}"
           },
           "format": "time_series",
           "group": [],
