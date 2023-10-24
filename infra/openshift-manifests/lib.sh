@@ -70,7 +70,7 @@ function add_minio_webhook(){
 
 function patch_knative_serving(){
     # patch knative serving to use http instead of https in the service status url
-    oc patch knativeserving -n knative-serving knative-serving -p '{"spec":{"config":{"network":{"default-external-scheme": "http"}}}}' --type=merge
+    oc patch knativeserving -n knative-serving knative-serving -p '{"spec":{"config":{"network":{"default-external-scheme": "https"}}}}' --type=merge
 
     # patch knative serving to only keep one revision of a service
     kubectl patch configmap/config-gc \
@@ -93,7 +93,7 @@ function patch_ui_service_configmap(){
     echo "uploadServiceUrl: ${uploadServiceUrl}"
 
     replyServiceUrl=$(oc get route -n ai-demo reply-service -o jsonpath="{.spec.host}")
-    replyServiceUrl="http://${replyServiceUrl}"
+    replyServiceUrl="https://${replyServiceUrl}"
     echo "replyServiceUrl: ${replyServiceUrl}"
 
     feedbackServiceUrl=$(oc get ksvc -n ai-demo feedback-service -o jsonpath="{.status.url}")

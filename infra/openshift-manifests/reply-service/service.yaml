@@ -138,4 +138,6 @@ spec:
     name: reply-service-exposed
   port:
     targetPort: 8080
+  tls:
+    termination: edge
   wildcardPolicy: None

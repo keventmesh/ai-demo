@@ -38,7 +38,7 @@ act --job=build \
 
 ```shell
 export DOCKER_REPO_OVERRIDE="quay.io/kevent-mesh"
-export AI_DEMO_IMAGE_TAG="my-tag"
+export AI_DEMO_IMAGE_TAG="main"
 
 ./infra/openshift-manifests/install.sh
 ```
